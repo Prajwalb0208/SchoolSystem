@@ -1,0 +1,49 @@
+.game-levels-home {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+}
+
+.game-levels-home h1 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 30px;
+}
+
+.difficulties-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin-top: 30px;
+}
+
+.difficulty-card {
+  background: white;
+  border: 3px solid;
+  border-radius: 12px;
+  padding: 30px;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.difficulty-card:hover {
+  transform: translateY(-5px);
+}
+
+.difficulty-card h2 {
+  font-size: 32px;
+  margin-bottom: 15px;
+}
+
+.difficulty-card p {
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.level-count {
+  font-weight: 600;
+  color: #333;
+  font-size: 18px;
+}
+

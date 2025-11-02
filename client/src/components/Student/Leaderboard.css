@@ -1,0 +1,99 @@
+.leaderboard-container {
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 30px;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.leaderboard-container h3 {
+  margin: 0 0 20px 0;
+  text-align: center;
+  color: #667eea;
+}
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.leaderboard-entry {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.leaderboard-entry:hover {
+  background: #e9ecef;
+  transform: translateX(5px);
+}
+
+.leaderboard-entry.current-user {
+  background: #e8eaff;
+  border: 2px solid #667eea;
+}
+
+.rank {
+  font-size: 24px;
+  font-weight: bold;
+  width: 50px;
+  text-align: center;
+}
+
+.student-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.profile-pic,
+.profile-pic-placeholder {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-pic-placeholder {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.student-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.student-usn {
+  font-size: 12px;
+  color: #666;
+}
+
+.score-info {
+  text-align: right;
+}
+
+.score {
+  font-size: 20px;
+  font-weight: bold;
+  color: #667eea;
+}
+
+.time {
+  font-size: 12px;
+  color: #666;
+}
+

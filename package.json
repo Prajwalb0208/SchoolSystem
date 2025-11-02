@@ -1,0 +1,25 @@
+{
+  "name": "school-system",
+  "version": "1.0.0",
+  "description": "Coding Habit Builder - A1 Problem Code",
+  "main": "server/server.js",
+  "scripts": {
+    "build": "cd client && npm run build",
+    "build-and-start": "cd client && npm run build && cd ../server && node server.js",
+    "start": "cd server && node server.js",
+    "server": "cd server && nodemon server.js",
+    "client": "cd client && npm start",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "install-server": "cd server && npm install",
+    "install-client": "cd client && npm install",
+    "install-all": "npm run install-server && npm run install-client",
+    "setup": "cd server && npm run setup"
+  },
+  "keywords": ["mern", "socket.io", "coding-game"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.1"
+  }
+}

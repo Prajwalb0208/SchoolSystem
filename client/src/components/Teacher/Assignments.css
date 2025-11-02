@@ -1,0 +1,140 @@
+.assignments-container {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+}
+
+.assignments-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.assignments-header h1 {
+  color: #333;
+  margin: 0;
+}
+
+.assignment-form {
+  max-width: 900px;
+}
+
+.questions-section {
+  margin-top: 30px;
+}
+
+.questions-section h3 {
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.question-form {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 15px;
+  align-items: end;
+}
+
+.form-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.assignment-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.no-assignments {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 18px;
+}
+
+.assignments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.assignment-card {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 25px;
+  border-left: 4px solid #667eea;
+}
+
+.assignment-card .assignment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.assignment-card h3 {
+  color: #333;
+  margin: 0;
+}
+
+.assignment-description {
+  color: #666;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.assignment-questions {
+  margin-top: 20px;
+}
+
+.assignment-questions h4 {
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.question-item {
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.question-item p {
+  margin: 0 0 8px 0;
+  color: #333;
+}
+
+.question-meta {
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+}
+
+.assignment-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #e0e0e0;
+  font-size: 12px;
+  color: #666;
+}
+
+.due-date {
+  background: #dc3545;
+  color: white;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
