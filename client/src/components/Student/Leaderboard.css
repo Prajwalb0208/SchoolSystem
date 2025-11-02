@@ -1,99 +1,188 @@
 .leaderboard-container {
-  background: rgba(255, 255, 255, 0.95);
-  color: #333;
-  border-radius: 12px;
-  padding: 20px;
+  background: rgba(255, 255, 255, 0.98);
+  color: #1a202c;
+  border-radius: 20px;
+  padding: 30px;
   margin-top: 30px;
-  max-width: 900px;
+  max-width: 1000px;
   margin-left: auto;
   margin-right: auto;
+  box-shadow: var(--card-shadow);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  animation: fadeInUp 0.5s ease-out;
 }
 
 .leaderboard-container h3 {
-  margin: 0 0 20px 0;
+  margin: 0 0 30px 0;
   text-align: center;
-  color: #667eea;
+  background: var(--bg-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 28px;
+  font-weight: 800;
+  position: relative;
+  padding-bottom: 15px;
+}
+
+.leaderboard-container h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 3px;
+  background: var(--bg-gradient);
+  border-radius: 2px;
 }
 
 .leaderboard-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .leaderboard-entry {
   display: flex;
   align-items: center;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  transition: all 0.3s ease;
+  padding: 20px 25px;
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  border-radius: 14px;
+  transition: var(--transition);
+  border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.leaderboard-entry::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: var(--bg-gradient);
+  transform: scaleY(0);
+  transition: transform 0.3s ease;
+}
+
+.leaderboard-entry:hover::before {
+  transform: scaleY(1);
 }
 
 .leaderboard-entry:hover {
-  background: #e9ecef;
-  transform: translateX(5px);
+  transform: translateX(8px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  border-color: rgba(102, 126, 234, 0.2);
 }
 
 .leaderboard-entry.current-user {
-  background: #e8eaff;
-  border: 2px solid #667eea;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border: 2px solid var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+  font-weight: 600;
 }
 
 .rank {
-  font-size: 24px;
-  font-weight: bold;
-  width: 50px;
+  font-size: 28px;
+  font-weight: 800;
+  width: 60px;
   text-align: center;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .student-info {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 18px;
+  position: relative;
+  z-index: 1;
 }
 
 .profile-pic,
 .profile-pic-placeholder {
-  width: 50px;
-  height: 50px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   object-fit: cover;
+  border: 3px solid white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: var(--transition);
+}
+
+.leaderboard-entry:hover .profile-pic,
+.leaderboard-entry:hover .profile-pic-placeholder {
+  transform: scale(1.1);
+  box-shadow: 0 6px 15px rgba(102, 126, 234, 0.3);
 }
 
 .profile-pic-placeholder {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--bg-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-weight: bold;
-  font-size: 20px;
+  font-weight: 800;
+  font-size: 24px;
 }
 
 .student-name {
-  font-weight: 600;
-  color: #333;
+  font-weight: 700;
+  color: #1a202c;
+  font-size: 17px;
 }
 
 .student-usn {
-  font-size: 12px;
-  color: #666;
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
 }
 
 .score-info {
   text-align: right;
+  position: relative;
+  z-index: 1;
 }
 
 .score {
-  font-size: 20px;
-  font-weight: bold;
-  color: #667eea;
+  font-size: 24px;
+  font-weight: 800;
+  background: var(--bg-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: block;
 }
 
 .time {
-  font-size: 12px;
-  color: #666;
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 600;
+  margin-top: 4px;
 }
 
+/* Responsive */
+@media (max-width: 768px) {
+  .leaderboard-container {
+    padding: 20px;
+  }
+
+  .leaderboard-entry {
+    padding: 15px;
+    flex-wrap: wrap;
+  }
+
+  .rank {
+    width: 40px;
+    font-size: 20px;
+  }
+
+  .student-info {
+    flex: 1 1 100%;
+    margin-top: 10px;
+  }
+}

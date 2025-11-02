@@ -119,5 +119,73 @@ router.delete('/:id', auth, teacherAuth, async (req, res) => {
   }
 });
 
+// Submit assignment (Student only)
+router.post('/:id/submit', auth, studentAuth, async (req, res) => {
+  try {
+    const { answers } = req.body; // Array of { questionIndex, answer }
+    
+    const assignment = await Assignment.findById(req.params.id);
+    if (!assignment) {
+      return res.status(404).json({ message: 'Assignment not found' });
+    }
+
+    // Check if already submitted
+    const existingSubmission = assignment.submissions.find(
+      sub => sub.studentId.toString() === req.userId.toString()
+    );
+
+    if (existingSubmission) {
+      // Update existing submission
+      existingSubmission.answers = answers.map(a => ({
+        questionIndex: a.questionIndex,
+        answer: a.answer,
+        submittedAt: new Date()
+      }));
+      existingSubmission.submittedAt = new Date();
+      existingSubmission.status = 'submitted';
+    } else {
+      // Create new submission
+      assignment.submissions.push({
+        studentId: req.userId,
+        answers: answers.map(a => ({
+          questionIndex: a.questionIndex,
+          answer: a.answer,
+          submittedAt: new Date()
+        })),
+        submittedAt: new Date(),
+        status: 'submitted'
+      });
+    }
+
+    assignment.updatedAt = new Date();
+    await assignment.save();
+
+    res.json({
+      message: 'Assignment submitted successfully',
+      submission: existingSubmission || assignment.submissions[assignment.submissions.length - 1]
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Get student's submission for an assignment
+router.get('/:id/submission', auth, studentAuth, async (req, res) => {
+  try {
+    const assignment = await Assignment.findById(req.params.id);
+    if (!assignment) {
+      return res.status(404).json({ message: 'Assignment not found' });
+    }
+
+    const submission = assignment.submissions.find(
+      sub => sub.studentId.toString() === req.userId.toString()
+    );
+
+    res.json({ submission: submission || null });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 module.exports = router;
 

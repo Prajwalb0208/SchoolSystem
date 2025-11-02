@@ -236,23 +236,28 @@ const HardGame = () => {
             </button>
           </div>
         ) : (
-          <div className="result-card">
+          <div className={`result-card ${result.passed || result.isCorrect ? 'correct' : 'incorrect'}`}>
             {result.passed ? (
               <>
                 <h2>🎉 Congratulations! You Passed!</h2>
-                <p>Position: #{result.position}</p>
-                <p>You are among the first 5 to complete correctly!</p>
+                <div className="success-info">
+                  <div className="position-badge">Position: #{result.position}</div>
+                  <p>You are among the first 5 to complete correctly!</p>
+                </div>
               </>
             ) : (
               <>
                 <h2>{result.isCorrect ? '✅ Code Correct!' : '❌ Code Incorrect'}</h2>
                 {!result.isCorrect && (
-                  <p>Only the first 5 students who complete correctly pass. Please try again!</p>
+                  <div className="retry-message">
+                    <p>Only the first 5 students who complete correctly pass.</p>
+                    <p>Keep trying to improve your speed and accuracy!</p>
+                  </div>
                 )}
               </>
             )}
             <button onClick={handleNext} className="btn btn-primary">
-              {passed ? (parseInt(level) < 50 ? 'Next Level' : 'Back to Games') : 'Try Again'}
+              {passed ? (parseInt(level) < 50 ? 'Next Level →' : '← Back to Games') : '🔄 Try Again'}
             </button>
           </div>
         )}

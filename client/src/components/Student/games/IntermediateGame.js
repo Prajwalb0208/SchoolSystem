@@ -80,7 +80,13 @@ const IntermediateGame = () => {
     if (selectedBlocks.length === 0) return;
 
     const timeTaken = Math.floor((Date.now() - startTime) / 1000);
-    const answer = selectedBlocks.join(',');
+    // Get the order values from selected blocks
+    const answer = selectedBlocks
+      .map(blockId => {
+        const block = blocks.find(b => b.id === blockId);
+        return block ? (block.order || blockId) : blockId;
+      })
+      .join(',');
 
     try {
       const token = localStorage.getItem('token');

@@ -14,14 +14,43 @@ router.get('/question/:difficulty/:level', auth, studentAuth, async (req, res) =
 
     // Check if student can access this level
     const student = await Student.findById(req.userId);
-    if (difficulty === 'intermediate' && student.easyLevelCompleted < 50) {
-      return res.status(403).json({ message: 'Complete all easy levels first' });
-    }
-    if (difficulty === 'hard' && student.intermediateLevelCompleted < 100) {
-      return res.status(403).json({ message: 'Complete all intermediate levels first' });
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
     }
 
     const levelNum = parseInt(level);
+    
+    // Allow level 1 always, otherwise check prerequisites
+    if (levelNum === 1) {
+      // Always allow first level of each difficulty
+      if (difficulty === 'intermediate' && student.easyLevelCompleted < 50) {
+        return res.status(403).json({ message: 'Complete all easy levels first' });
+      }
+      if (difficulty === 'hard' && student.intermediateLevelCompleted < 100) {
+        return res.status(403).json({ message: 'Complete all intermediate levels first' });
+      }
+    } else {
+      // For levels > 1, check if previous level is completed
+      if (difficulty === 'easy' && student.easyLevelCompleted < levelNum - 1) {
+        return res.status(403).json({ message: `Complete level ${levelNum - 1} first` });
+      }
+      if (difficulty === 'intermediate') {
+        if (student.easyLevelCompleted < 50) {
+          return res.status(403).json({ message: 'Complete all easy levels first' });
+        }
+        if (student.intermediateLevelCompleted < levelNum - 1) {
+          return res.status(403).json({ message: `Complete level ${levelNum - 1} first` });
+        }
+      }
+      if (difficulty === 'hard') {
+        if (student.intermediateLevelCompleted < 100) {
+          return res.status(403).json({ message: 'Complete all intermediate levels first' });
+        }
+        if (student.hardLevelCompleted < levelNum - 1) {
+          return res.status(403).json({ message: `Complete level ${levelNum - 1} first` });
+        }
+      }
+    }
     let question;
     
     // For hard level, filter by language if provided
@@ -68,8 +97,9 @@ router.get('/question/:difficulty/:level', auth, studentAuth, async (req, res) =
       // Shuffle code blocks for the student
       const shuffledBlocks = [...question.codeBlocks].sort(() => Math.random() - 0.5);
       questionData.codeDescription = question.codeDescription;
-      questionData.codeBlocks = shuffledBlocks.map(block => ({
-        id: block._id,
+      questionData.codeBlocks = shuffledBlocks.map((block, index) => ({
+        id: block.order || index, // Use order as unique identifier
+        order: block.order, // Keep original order for validation
         lines: block.lines
       }));
     } else if (question.questionType === 'codeWrite') {
@@ -104,7 +134,12 @@ router.post('/submit-answer', auth, studentAuth, async (req, res) => {
       isCorrect = answer === question.correctAnswer;
     } else if (question.questionType === 'codeBlocks') {
       // Check if blocks are in correct order
-      const correctOrder = question.codeBlocks.map(b => b._id.toString()).join(',');
+      // Sort blocks by order and check if submitted order matches
+      const correctOrder = question.codeBlocks
+        .slice()
+        .sort((a, b) => a.order - b.order)
+        .map(b => b.order.toString())
+        .join(',');
       isCorrect = answer === correctOrder;
     } else if (question.questionType === 'codeWrite') {
       // For code write, we'll do basic validation (in production, use code execution)

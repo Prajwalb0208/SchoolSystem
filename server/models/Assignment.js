@@ -31,6 +31,31 @@ const assignmentSchema = new mongoose.Schema({
   dueDate: {
     type: Date
   },
+  submissions: [{
+    studentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Student'
+    },
+    answers: [{
+      questionIndex: Number,
+      answer: String,
+      submittedAt: {
+        type: Date,
+        default: Date.now
+      }
+    }],
+    submittedAt: {
+      type: Date,
+      default: Date.now
+    },
+    status: {
+      type: String,
+      enum: ['submitted', 'graded'],
+      default: 'submitted'
+    },
+    score: Number,
+    feedback: String
+  }],
   createdAt: {
     type: Date,
     default: Date.now

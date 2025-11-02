@@ -143,16 +143,20 @@ const EasyGame = () => {
 
   return (
     <div className="game-container" style={{ background: visual.background }}>
-      <div className="game-header">
+        <div className="game-header">
         <h2>Easy Level {level} {visual.icon}</h2>
-        <div className="timer">Time: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</div>
+        <div className={`timer ${timeLeft < 60 ? 'warning' : ''}`}>
+          Time: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+        </div>
       </div>
 
       <div className="game-content">
         {!result ? (
           <>
             <div className="question-card">
-              <h3>{question.question}</h3>
+              <div className="question-text">
+                <pre className="code-snippet">{question.question}</pre>
+              </div>
               <div className="options">
                 {question.options?.map((option, index) => (
                   <button
@@ -160,7 +164,8 @@ const EasyGame = () => {
                     className={`option-btn ${selectedAnswer === index ? 'selected' : ''}`}
                     onClick={() => setSelectedAnswer(index)}
                   >
-                    {String.fromCharCode(65 + index)}. {option}
+                    <span className="option-letter">{String.fromCharCode(65 + index)}</span>
+                    <span className="option-text">{option}</span>
                   </button>
                 ))}
               </div>
@@ -174,12 +179,20 @@ const EasyGame = () => {
             </div>
           </>
         ) : (
-          <div className="result-card">
+          <div className={`result-card ${result.isCorrect ? 'correct' : 'incorrect'}`}>
             <h2>{result.isCorrect ? '✅ Correct!' : '❌ Incorrect'}</h2>
-            {result.explanation && <p>{result.explanation}</p>}
-            <p>Score: {result.score}</p>
+            {result.explanation && (
+              <div className="explanation-box">
+                <strong>Explanation:</strong>
+                <p>{result.explanation}</p>
+              </div>
+            )}
+            <div className="score-display">
+              <span className="score-label">Score:</span>
+              <span className="score-value">{Math.round(result.score)}</span>
+            </div>
             <button onClick={handleNext} className="btn btn-primary">
-              {parseInt(level) < 50 ? 'Next Level' : 'Back to Games'}
+              {parseInt(level) < 50 ? 'Next Level →' : '← Back to Games'}
             </button>
           </div>
         )}
