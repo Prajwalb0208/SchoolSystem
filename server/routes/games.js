@@ -10,6 +10,7 @@ const router = express.Router();
 router.get('/question/:difficulty/:level', auth, studentAuth, async (req, res) => {
   try {
     const { difficulty, level } = req.params;
+    const { language } = req.query; // For hard level language selection
 
     // Check if student can access this level
     const student = await Student.findById(req.userId);
@@ -20,10 +21,30 @@ router.get('/question/:difficulty/:level', auth, studentAuth, async (req, res) =
       return res.status(403).json({ message: 'Complete all intermediate levels first' });
     }
 
-    const question = await Question.findOne({ difficulty, level });
+    const levelNum = parseInt(level);
+    let question;
+    
+    // For hard level, filter by language if provided
+    if (difficulty === 'hard' && language) {
+      question = await Question.findOne({ 
+        difficulty, 
+        level: levelNum, 
+        language: language 
+      });
+    } else {
+      question = await Question.findOne({ difficulty, level: levelNum });
+    }
     
     if (!question) {
-      return res.status(404).json({ message: 'Question not found for this level' });
+      // Log for debugging
+      const count = await Question.countDocuments({ difficulty, level: levelNum });
+      const allQuestions = await Question.find({ difficulty }).select('level').limit(5);
+      console.log(`Question not found. Difficulty: ${difficulty}, Level: ${levelNum}, Language: ${language || 'N/A'}, Count: ${count}`);
+      console.log(`Available levels for ${difficulty}:`, allQuestions.map(q => q.level));
+      return res.status(404).json({ 
+        message: `Question not found for ${difficulty} level ${levelNum}${language ? ` in ${language}` : ''}. Please seed the database.`,
+        availableLevels: allQuestions.map(q => q.level)
+      });
     }
 
     // Randomize visual theme (1-5)

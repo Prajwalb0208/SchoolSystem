@@ -46,8 +46,11 @@ for (let i = 1; i <= 100; i++) {
   });
 }
 
-// Hard Level Questions
-// 10 C questions
+// Hard Level Questions - 50 levels total
+// Each level can have questions for different languages
+// The spinning wheel selects which language to use
+
+// 10 C questions (levels 1-10)
 for (let i = 1; i <= 10; i++) {
   questions.push({
     difficulty: 'hard',
@@ -65,7 +68,7 @@ for (let i = 1; i <= 10; i++) {
   });
 }
 
-// 10 C++ questions
+// 10 C++ questions (levels 1-10, but different from C)
 for (let i = 1; i <= 10; i++) {
   questions.push({
     difficulty: 'hard',
@@ -83,7 +86,7 @@ for (let i = 1; i <= 10; i++) {
   });
 }
 
-// 15 Java questions
+// 15 Java questions (levels 1-15)
 for (let i = 1; i <= 15; i++) {
   questions.push({
     difficulty: 'hard',
@@ -101,8 +104,75 @@ for (let i = 1; i <= 15; i++) {
   });
 }
 
-// 15 Python questions
+// 15 Python questions (levels 1-15)
 for (let i = 1; i <= 15; i++) {
+  questions.push({
+    difficulty: 'hard',
+    level: i,
+    questionType: 'codeWrite',
+    language: 'Python',
+    problemStatement: `Hard Python Question ${i}: Write a Python program to solve this problem. Problem description ${i}.`,
+    testCases: [
+      { input: 'test1', output: 'expected1', description: 'Test case 1' },
+      { input: 'test2', output: 'expected2', description: 'Test case 2' }
+    ],
+    solutionCode: `# Solution for question ${i}\ndef main():\n    pass\n\nif __name__ == "__main__":\n    main()`,
+    hints: [`Hint 1 for question ${i}`, `Hint 2 for question ${i}`],
+    timeLimit: 300
+  });
+}
+
+// Additional questions to fill up to 50 levels for each language
+// Levels 16-50 for C and C++
+for (let i = 11; i <= 50; i++) {
+  questions.push({
+    difficulty: 'hard',
+    level: i,
+    questionType: 'codeWrite',
+    language: 'C',
+    problemStatement: `Hard C Question ${i}: Write a C program to solve this problem. Problem description ${i}.`,
+    testCases: [
+      { input: 'test1', output: 'expected1', description: 'Test case 1' },
+      { input: 'test2', output: 'expected2', description: 'Test case 2' }
+    ],
+    solutionCode: `#include <stdio.h>\n\nint main() {\n    // Solution for question ${i}\n    return 0;\n}`,
+    hints: [`Hint 1 for question ${i}`, `Hint 2 for question ${i}`],
+    timeLimit: 300
+  });
+  
+  questions.push({
+    difficulty: 'hard',
+    level: i,
+    questionType: 'codeWrite',
+    language: 'C++',
+    problemStatement: `Hard C++ Question ${i}: Write a C++ program to solve this problem. Problem description ${i}.`,
+    testCases: [
+      { input: 'test1', output: 'expected1', description: 'Test case 1' },
+      { input: 'test2', output: 'expected2', description: 'Test case 2' }
+    ],
+    solutionCode: `#include <iostream>\nusing namespace std;\n\nint main() {\n    // Solution for question ${i}\n    return 0;\n}`,
+    hints: [`Hint 1 for question ${i}`, `Hint 2 for question ${i}`],
+    timeLimit: 300
+  });
+}
+
+// Levels 16-50 for Java and Python
+for (let i = 16; i <= 50; i++) {
+  questions.push({
+    difficulty: 'hard',
+    level: i,
+    questionType: 'codeWrite',
+    language: 'Java',
+    problemStatement: `Hard Java Question ${i}: Write a Java program to solve this problem. Problem description ${i}.`,
+    testCases: [
+      { input: 'test1', output: 'expected1', description: 'Test case 1' },
+      { input: 'test2', output: 'expected2', description: 'Test case 2' }
+    ],
+    solutionCode: `public class Solution {\n    public static void main(String[] args) {\n        // Solution for question ${i}\n    }\n}`,
+    hints: [`Hint 1 for question ${i}`, `Hint 2 for question ${i}`],
+    timeLimit: 300
+  });
+  
   questions.push({
     difficulty: 'hard',
     level: i,

@@ -58,22 +58,19 @@ const HardGame = () => {
 
   const fetchQuestion = async (language) => {
     try {
-      // Find question for this level and language
       const token = localStorage.getItem('token');
-      // In real implementation, you'd fetch based on language
+      // Fetch question with language parameter
       const response = await axios.get(`${API_URL}/games/question/hard/${level}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` },
+        params: { language }
       });
       
-      // Filter by language if needed
-      let questionData = response.data;
-      if (questionData.language !== language) {
-        // Fetch another question with matching language
-        // This is simplified - in production, implement proper filtering
-      }
-      setQuestion(questionData);
+      setQuestion(response.data);
     } catch (error) {
       console.error('Error fetching question:', error);
+      if (error.response?.status === 404) {
+        alert('Question not found for this language and level. Please try again or contact support.');
+      }
     }
   };
 

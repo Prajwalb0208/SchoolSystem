@@ -1,6 +1,7 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import LandingPage from './components/LandingPage';
 import Login from './components/Auth/Login';
 import StudentSignup from './components/Auth/StudentSignup';
 import TeacherSignup from './components/Auth/TeacherSignup';
@@ -15,6 +16,7 @@ function App() {
       <Router>
         <div className="App">
           <Routes>
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup/student" element={<StudentSignup />} />
             <Route path="/signup/teacher" element={<TeacherSignup />} />
@@ -34,7 +36,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/" element={<Navigate to="/login" replace />} />
           </Routes>
         </div>
       </Router>

@@ -93,18 +93,29 @@ const DashboardHome = () => {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
+        if (!token) return;
+        
         const response = await fetch(`${API_URL}/students/profile`, {
+          method: 'GET',
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         setStats(data);
       } catch (error) {
         console.error('Error fetching profile:', error);
       }
     };
-    fetchProfile();
+    if (API_URL) {
+      fetchProfile();
+    }
   }, [API_URL]);
 
   return (

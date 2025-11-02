@@ -25,8 +25,10 @@ const Notes = () => {
 
   const handleDownload = async (language) => {
     try {
+      const token = localStorage.getItem('token');
       const response = await axios.get(`${API_URL}/notes/${language}`, {
-        responseType: 'blob'
+        responseType: 'blob',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
@@ -35,9 +37,14 @@ const Notes = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading notes:', error);
-      alert('Error downloading notes. Please try again.');
+      if (error.response?.status === 404) {
+        alert('Notes file not found. Please contact administrator.');
+      } else {
+        alert('Error downloading notes. Please try again.');
+      }
     }
   };
 
