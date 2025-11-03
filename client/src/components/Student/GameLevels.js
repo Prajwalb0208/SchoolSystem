@@ -3,6 +3,7 @@ import { Routes, Route, Link } from 'react-router-dom';
 import EasyGame from './games/EasyGame';
 import IntermediateGame from './games/IntermediateGame';
 import HardGame from './games/HardGame';
+import soundEffects from '../../utils/soundEffects';
 import './GameLevels.css';
 
 const GameLevels = () => {
@@ -68,6 +69,8 @@ const GameLevelsHome = () => {
                 to={`/student/games/${diff.name.toLowerCase()}/1`} 
                 className="btn"
                 style={{ background: diff.color, color: 'white' }}
+                onClick={() => soundEffects.playClick()}
+                onMouseEnter={() => soundEffects.playHover()}
               >
                 Start Playing
               </Link>

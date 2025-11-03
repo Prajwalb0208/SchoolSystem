@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
 import io from 'socket.io-client';
 import Leaderboard from '../Leaderboard';
+import LevelCompletion from './LevelCompletion';
+import soundEffects from '../../../utils/soundEffects';
 import './Game.css';
 
 const IntermediateGame = () => {
@@ -17,9 +19,12 @@ const IntermediateGame = () => {
   const [result, setResult] = useState(null);
   const [visualTheme, setVisualTheme] = useState(1);
   const [socket, setSocket] = useState(null);
-  const [startTime] = useState(Date.now());
+  const [startTime, setStartTime] = useState(Date.now());
+  const [timeTaken, setTimeTaken] = useState(0);
+  const lastWarningTimeRef = useRef(0);
 
   useEffect(() => {
+    soundEffects.updateSettings();
     fetchQuestion();
     
     const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
@@ -35,6 +40,11 @@ const IntermediateGame = () => {
         if (prev <= 1) {
           handleTimeUp();
           return 0;
+        }
+        // Play warning sound every 10 seconds when time is low
+        if (prev <= 60 && prev % 10 === 0 && Date.now() - lastWarningTimeRef.current > 9000) {
+          soundEffects.playTimeWarning();
+          lastWarningTimeRef.current = Date.now();
         }
         return prev - 1;
       });
@@ -57,6 +67,7 @@ const IntermediateGame = () => {
       setVisualTheme(response.data.visualTheme || 1);
       setTimeLeft(300);
       setSelectedBlocks([]);
+      setStartTime(Date.now());
     } catch (error) {
       console.error('Error fetching question:', error);
     }
@@ -69,6 +80,7 @@ const IntermediateGame = () => {
   };
 
   const handleBlockClick = (block) => {
+    soundEffects.playClick();
     if (selectedBlocks.includes(block.id)) {
       setSelectedBlocks(selectedBlocks.filter(id => id !== block.id));
     } else {
@@ -77,9 +89,15 @@ const IntermediateGame = () => {
   };
 
   const handleSubmit = async () => {
-    if (selectedBlocks.length === 0) return;
+    if (selectedBlocks.length === 0) {
+      soundEffects.playError();
+      return;
+    }
 
-    const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+    soundEffects.playSubmit();
+    const calculatedTimeTaken = Math.floor((Date.now() - startTime) / 1000);
+    setTimeTaken(calculatedTimeTaken);
+    
     // Get the order values from selected blocks
     const answer = selectedBlocks
       .map(blockId => {
@@ -95,7 +113,7 @@ const IntermediateGame = () => {
         {
           questionId: question._id,
           answer,
-          timeTaken,
+          timeTaken: calculatedTimeTaken,
           visualTheme
         },
         {
@@ -106,22 +124,29 @@ const IntermediateGame = () => {
       setResult(response.data);
 
       if (response.data.isCorrect && socket) {
+        soundEffects.playSuccess();
         socket.emit('submit-answer', {
           difficulty: 'intermediate',
           level: parseInt(level),
           studentId: user?.id,
           score: response.data.score,
-          timeTaken
+          timeTaken: calculatedTimeTaken
         });
 
         // Check for badge eligibility
-        await axios.post(
+        const badgeResponse = await axios.post(
           `${API_URL}/games/check-badge`,
           { difficulty: 'intermediate' },
           {
             headers: { 'Authorization': `Bearer ${token}` }
           }
         );
+        
+        if (badgeResponse.data.badgeEarned) {
+          soundEffects.playBadge();
+        }
+      } else {
+        soundEffects.playError();
       }
 
       await axios.post(
@@ -133,15 +158,16 @@ const IntermediateGame = () => {
       );
     } catch (error) {
       console.error('Error submitting answer:', error);
+      soundEffects.playError();
     }
   };
 
   const handleNext = () => {
+    soundEffects.playClick();
+    setResult(null);
+    setSelectedBlocks([]);
     if (parseInt(level) < 100) {
       navigate(`/student/games/intermediate/${parseInt(level) + 1}`);
-      setResult(null);
-      setSelectedBlocks([]);
-      fetchQuestion();
     } else {
       navigate('/student/games');
     }
@@ -226,13 +252,17 @@ const IntermediateGame = () => {
             </div>
           </>
         ) : (
-          <div className="result-card">
-            <h2>{result.isCorrect ? '✅ Correct!' : '❌ Incorrect'}</h2>
-            <p>Score: {result.score}</p>
-            <button onClick={handleNext} className="btn btn-primary">
-              {parseInt(level) < 100 ? 'Next Level' : 'Back to Games'}
-            </button>
-          </div>
+          <LevelCompletion
+            isCorrect={result.isCorrect}
+            score={result.score}
+            level={parseInt(level)}
+            difficulty="intermediate"
+            maxLevel={100}
+            explanation={result.explanation}
+            timeTaken={timeTaken}
+            nextLevelPath={parseInt(level) < 100 ? `/student/games/intermediate/${parseInt(level) + 1}` : null}
+            onClose={handleNext}
+          />
         )}
       </div>
 

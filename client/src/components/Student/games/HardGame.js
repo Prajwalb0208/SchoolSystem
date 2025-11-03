@@ -4,6 +4,8 @@ import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
 import io from 'socket.io-client';
 import Leaderboard from '../Leaderboard';
+import LevelCompletion from './LevelCompletion';
+import soundEffects from '../../../utils/soundEffects';
 import './Game.css';
 import './HardGame.css';
 
@@ -17,8 +19,9 @@ const HardGame = () => {
   const [code, setCode] = useState('');
   const [result, setResult] = useState(null);
   const [socket, setSocket] = useState(null);
-  const [startTime] = useState(Date.now());
+  const [startTime, setStartTime] = useState(Date.now());
   const [passed, setPassed] = useState(false);
+  const [timeTaken, setTimeTaken] = useState(0);
 
   const languages = ['C', 'C++', 'Java', 'Python'];
   const languageTemplates = {
@@ -29,6 +32,7 @@ const HardGame = () => {
   };
 
   useEffect(() => {
+    soundEffects.updateSettings();
     const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
     newSocket.emit('join-game', {
       difficulty: 'hard',
@@ -44,6 +48,7 @@ const HardGame = () => {
 
   const spinWheel = () => {
     if (spinning) return;
+    soundEffects.playSpin();
     setSpinning(true);
     
     setTimeout(() => {
@@ -51,8 +56,10 @@ const HardGame = () => {
       const language = languages[randomIndex];
       setSelectedLanguage(language);
       setSpinning(false);
+      soundEffects.playPopup();
       fetchQuestion(language);
       setCode(languageTemplates[language] || '');
+      setStartTime(Date.now());
     }, 3000);
   };
 
@@ -75,9 +82,14 @@ const HardGame = () => {
   };
 
   const handleSubmit = async () => {
-    if (!code.trim()) return;
+    if (!code.trim()) {
+      soundEffects.playError();
+      return;
+    }
 
-    const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+    soundEffects.playSubmit();
+    const calculatedTimeTaken = Math.floor((Date.now() - startTime) / 1000);
+    setTimeTaken(calculatedTimeTaken);
 
     try {
       const token = localStorage.getItem('token');
@@ -88,7 +100,7 @@ const HardGame = () => {
         {
           questionId: question._id,
           answer: code,
-          timeTaken,
+          timeTaken: calculatedTimeTaken,
           visualTheme: 1
         },
         {
@@ -97,6 +109,7 @@ const HardGame = () => {
       );
 
       if (response.data.isCorrect) {
+        soundEffects.playSuccess();
         // Add to leaderboard
         const leaderboardResponse = await axios.post(
           `${API_URL}/games/leaderboard/add`,
@@ -104,7 +117,7 @@ const HardGame = () => {
             difficulty: 'hard',
             level: parseInt(level),
             score: response.data.score,
-            timeTaken
+            timeTaken: calculatedTimeTaken
           },
           {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -112,6 +125,11 @@ const HardGame = () => {
         );
 
         setPassed(leaderboardResponse.data.passed);
+        
+        if (leaderboardResponse.data.passed) {
+          soundEffects.playBadge();
+        }
+        
         setResult({
           ...response.data,
           passed: leaderboardResponse.data.passed,
@@ -124,10 +142,11 @@ const HardGame = () => {
             level: parseInt(level),
             studentId: user?.id,
             score: response.data.score,
-            timeTaken
+            timeTaken: calculatedTimeTaken
           });
         }
       } else {
+        soundEffects.playError();
         setResult(response.data);
       }
 
@@ -140,22 +159,22 @@ const HardGame = () => {
       );
     } catch (error) {
       console.error('Error submitting answer:', error);
+      soundEffects.playError();
     }
   };
 
   const handleNext = () => {
-    if (passed && parseInt(level) < 50) {
+    soundEffects.playClick();
+    const wasPassed = passed;
+    setResult(null);
+    setSelectedLanguage(null);
+    setCode('');
+    setPassed(false);
+    
+    if (wasPassed && parseInt(level) < 50) {
       navigate(`/student/games/hard/${parseInt(level) + 1}`);
-      setResult(null);
-      setSelectedLanguage(null);
-      setCode('');
-      setPassed(false);
-    } else if (!passed) {
-      // Restart same level
-      setResult(null);
-      setSelectedLanguage(null);
-      setCode('');
-      setPassed(false);
+    } else if (!wasPassed) {
+      // Restart same level - nothing to do, already reset state
     } else {
       navigate('/student/games');
     }
@@ -189,6 +208,7 @@ const HardGame = () => {
               onClick={spinWheel}
               disabled={spinning}
               className="btn btn-primary"
+              onMouseEnter={() => soundEffects.playHover()}
             >
               {spinning ? 'Spinning...' : 'Spin Wheel'}
             </button>
@@ -236,30 +256,24 @@ const HardGame = () => {
             </button>
           </div>
         ) : (
-          <div className={`result-card ${result.passed || result.isCorrect ? 'correct' : 'incorrect'}`}>
-            {result.passed ? (
-              <>
-                <h2>🎉 Congratulations! You Passed!</h2>
-                <div className="success-info">
-                  <div className="position-badge">Position: #{result.position}</div>
-                  <p>You are among the first 5 to complete correctly!</p>
-                </div>
-              </>
-            ) : (
-              <>
-                <h2>{result.isCorrect ? '✅ Code Correct!' : '❌ Code Incorrect'}</h2>
-                {!result.isCorrect && (
-                  <div className="retry-message">
-                    <p>Only the first 5 students who complete correctly pass.</p>
-                    <p>Keep trying to improve your speed and accuracy!</p>
-                  </div>
-                )}
-              </>
-            )}
-            <button onClick={handleNext} className="btn btn-primary">
-              {passed ? (parseInt(level) < 50 ? 'Next Level →' : '← Back to Games') : '🔄 Try Again'}
-            </button>
-          </div>
+          <LevelCompletion
+            isCorrect={result.isCorrect}
+            score={result.score}
+            level={parseInt(level)}
+            difficulty="hard"
+            maxLevel={50}
+            explanation={result.explanation}
+            timeTaken={timeTaken}
+            nextLevelPath={result?.passed && parseInt(level) < 50 ? `/student/games/hard/${parseInt(level) + 1}` : null}
+            onClose={handleNext}
+            specialAchievement={
+              result.passed 
+                ? `🏆 Position #${result.position} - Among Top 5!` 
+                : result.isCorrect 
+                  ? 'Correct but not fast enough. Try again!' 
+                  : null
+            }
+          />
         )}
       </div>
 

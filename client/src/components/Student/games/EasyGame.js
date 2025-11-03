@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
 import io from 'socket.io-client';
 import Leaderboard from '../Leaderboard';
+import LevelCompletion from './LevelCompletion';
+import soundEffects from '../../../utils/soundEffects';
 import './Game.css';
 
 const EasyGame = () => {
@@ -16,8 +18,12 @@ const EasyGame = () => {
   const [result, setResult] = useState(null);
   const [visualTheme, setVisualTheme] = useState(1);
   const [socket, setSocket] = useState(null);
+  const [timeTaken, setTimeTaken] = useState(0);
+  const [startTime, setStartTime] = useState(Date.now());
+  const lastWarningTimeRef = useRef(0);
 
   useEffect(() => {
+    soundEffects.updateSettings();
     fetchQuestion();
     
     // Initialize socket
@@ -35,6 +41,11 @@ const EasyGame = () => {
         if (prev <= 1) {
           handleTimeUp();
           return 0;
+        }
+        // Play warning sound every 10 seconds when time is low
+        if (prev <= 60 && prev % 10 === 0 && Date.now() - lastWarningTimeRef.current > 9000) {
+          soundEffects.playTimeWarning();
+          lastWarningTimeRef.current = Date.now();
         }
         return prev - 1;
       });
@@ -55,6 +66,7 @@ const EasyGame = () => {
       setQuestion(response.data);
       setVisualTheme(response.data.visualTheme || 1);
       setTimeLeft(300);
+      setStartTime(Date.now());
     } catch (error) {
       console.error('Error fetching question:', error);
     }
@@ -68,10 +80,14 @@ const EasyGame = () => {
   };
 
   const handleSubmit = async () => {
-    if (selectedAnswer === null) return;
+    if (selectedAnswer === null) {
+      soundEffects.playError();
+      return;
+    }
 
-    const startTime = Date.now();
-    const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+    soundEffects.playSubmit();
+    const calculatedTimeTaken = Math.floor((Date.now() - startTime) / 1000);
+    setTimeTaken(calculatedTimeTaken);
 
     try {
       const token = localStorage.getItem('token');
@@ -80,7 +96,7 @@ const EasyGame = () => {
         {
           questionId: question._id,
           answer: selectedAnswer,
-          timeTaken,
+          timeTaken: calculatedTimeTaken,
           visualTheme
         },
         {
@@ -91,13 +107,16 @@ const EasyGame = () => {
       setResult(response.data);
 
       if (response.data.isCorrect && socket) {
+        soundEffects.playSuccess();
         socket.emit('submit-answer', {
           difficulty: 'easy',
           level: parseInt(level),
           studentId: user?.id,
           score: response.data.score,
-          timeTaken
+          timeTaken: calculatedTimeTaken
         });
+      } else {
+        soundEffects.playError();
       }
 
       // Update streak
@@ -110,15 +129,16 @@ const EasyGame = () => {
       );
     } catch (error) {
       console.error('Error submitting answer:', error);
+      soundEffects.playError();
     }
   };
 
   const handleNext = () => {
+    soundEffects.playClick();
+    setResult(null);
+    setSelectedAnswer(null);
     if (parseInt(level) < 50) {
       navigate(`/student/games/easy/${parseInt(level) + 1}`);
-      setResult(null);
-      setSelectedAnswer(null);
-      fetchQuestion();
     } else {
       navigate('/student/games');
     }
@@ -162,7 +182,11 @@ const EasyGame = () => {
                   <button
                     key={index}
                     className={`option-btn ${selectedAnswer === index ? 'selected' : ''}`}
-                    onClick={() => setSelectedAnswer(index)}
+                    onClick={() => {
+                      soundEffects.playClick();
+                      setSelectedAnswer(index);
+                    }}
+                    onMouseEnter={() => soundEffects.playHover()}
                   >
                     <span className="option-letter">{String.fromCharCode(65 + index)}</span>
                     <span className="option-text">{option}</span>
@@ -179,22 +203,17 @@ const EasyGame = () => {
             </div>
           </>
         ) : (
-          <div className={`result-card ${result.isCorrect ? 'correct' : 'incorrect'}`}>
-            <h2>{result.isCorrect ? '✅ Correct!' : '❌ Incorrect'}</h2>
-            {result.explanation && (
-              <div className="explanation-box">
-                <strong>Explanation:</strong>
-                <p>{result.explanation}</p>
-              </div>
-            )}
-            <div className="score-display">
-              <span className="score-label">Score:</span>
-              <span className="score-value">{Math.round(result.score)}</span>
-            </div>
-            <button onClick={handleNext} className="btn btn-primary">
-              {parseInt(level) < 50 ? 'Next Level →' : '← Back to Games'}
-            </button>
-          </div>
+          <LevelCompletion
+            isCorrect={result.isCorrect}
+            score={result.score}
+            level={parseInt(level)}
+            difficulty="easy"
+            maxLevel={50}
+            explanation={result.explanation}
+            timeTaken={timeTaken}
+            nextLevelPath={parseInt(level) < 50 ? `/student/games/easy/${parseInt(level) + 1}` : null}
+            onClose={handleNext}
+          />
         )}
       </div>
 

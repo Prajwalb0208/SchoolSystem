@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import soundEffects from '../../utils/soundEffects';
 import './Settings.css';
 
 const Settings = () => {
@@ -22,6 +23,11 @@ const Settings = () => {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
     localStorage.setItem('gameSettings', JSON.stringify(newSettings));
+    soundEffects.updateSettings();
+    // Play test sound when adjusting volume (if enabled)
+    if (key === 'soundVolume' && value > 0) {
+      soundEffects.playClick();
+    }
   };
 
   const handleVolumeChange = (e) => {
