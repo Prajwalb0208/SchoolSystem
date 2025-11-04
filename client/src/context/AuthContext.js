@@ -17,6 +17,12 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
 
   const API_URL = process.env.REACT_APP_API_URL || 'https://school-system-lxrvdmotp-prajwalb0208s-projects.vercel.app/api';
+  
+  // Debug: Log the API URL being used
+  useEffect(() => {
+    console.log('API_URL:', API_URL);
+    console.log('REACT_APP_API_URL env:', process.env.REACT_APP_API_URL);
+  }, []);
 
   useEffect(() => {
     if (token) {
