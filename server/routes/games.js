@@ -317,14 +317,18 @@ router.post('/submit-quiz', optionalAuthQuiz, async (req, res) => {
       correctAnswers: correctCount,
       totalQuestions: 5,
       score: totalScore,
-      answers: quizAnswers.map((a, idx) => ({
-        questionId: a.questionId,
-        isCorrect: a.isCorrect,
-        correctAnswer: questions.find(q => q._id.toString() === a.questionId)?.questionType === 'mcq' 
-          ? questions.find(q => q._id.toString() === a.questionId)?.correctAnswer 
-          : null,
-        explanation: questions.find(q => q._id.toString() === a.questionId)?.explanation
-      }))
+      answers: quizAnswers.map((a, idx) => {
+        const question = questions.find(q => q._id.toString() === a.questionId);
+        return {
+          questionId: a.questionId,
+          question: question?.question || '',
+          options: question?.options || [],
+          userAnswer: a.answer,
+          isCorrect: a.isCorrect,
+          correctAnswer: question?.questionType === 'mcq' ? question?.correctAnswer : null,
+          explanation: question?.explanation || null
+        };
+      })
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

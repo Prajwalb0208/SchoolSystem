@@ -100,21 +100,22 @@ const Game = () => {
     
     if (passed) {
       soundEffects.playSuccess();
+      // Reset timer for next session but keep game paused
       setGameTime(300);
-      setGameRunning(true);
-      setIsPaused(false);
+      setProgress(0);
+      // Keep game paused - don't advance level or reset score
+      setGameRunning(false);
+      setIsPaused(true);
       setShowQuiz(false);
       setQuizData(null);
-      setGameScore(0);
-      setProgress(0);
-      if (currentLevel < 5) {
-        setCurrentLevel(prev => prev + 1);
-      } else {
-        setCurrentLevel(1);
-      }
       startTimeRef.current = Date.now();
     } else {
       soundEffects.playError();
+      // Keep game paused if quiz failed
+      setGameRunning(false);
+      setIsPaused(true);
+      setShowQuiz(false);
+      setQuizData(null);
     }
   };
 
@@ -244,7 +245,19 @@ const Game = () => {
       {isPaused && !showQuiz && (
         <div className="pause-overlay">
           <h2>⏸️ Game Paused</h2>
-          <p>Click Resume to continue playing</p>
+          <p>{quizPassed ? 'Quiz completed! Click Resume to continue playing at the same level.' : 'Click Resume to continue playing'}</p>
+          {quizPassed && (
+            <div className="current-stats" style={{ marginTop: '20px' }}>
+              <div className="stat-box">
+                <span className="stat-label">Score</span>
+                <span className="stat-value-large">{gameScore}</span>
+              </div>
+              <div className="stat-box">
+                <span className="stat-label">Level</span>
+                <span className="stat-value-large">{currentLevel}/5</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

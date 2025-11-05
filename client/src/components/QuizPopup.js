@@ -10,6 +10,8 @@ const QuizPopup = ({ quiz, onComplete, onRetry, passed }) => {
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState(null);
+  const [submittedQuestions, setSubmittedQuestions] = useState(new Set()); // Track which questions have been submitted
+  const [showReview, setShowReview] = useState(false); // Show review screen after final submission
 
   useEffect(() => {
     soundEffects.updateSettings();
@@ -19,11 +21,33 @@ const QuizPopup = ({ quiz, onComplete, onRetry, passed }) => {
   }, [passed]);
 
   const handleAnswerChange = (questionId, answer) => {
-    setAnswers(prev => ({
-      ...prev,
-      [questionId]: answer
-    }));
-    soundEffects.playClick();
+    // Only allow changing answer if question hasn't been submitted yet
+    if (!submittedQuestions.has(questionId)) {
+      setAnswers(prev => ({
+        ...prev,
+        [questionId]: answer
+      }));
+      soundEffects.playClick();
+    }
+  };
+
+  const handleSubmitAnswer = () => {
+    const currentQuestion = quiz.questions[currentQuestionIndex];
+    if (answers[currentQuestion._id] === undefined || answers[currentQuestion._id] === null) {
+      alert('Please select an answer before submitting.');
+      soundEffects.playError();
+      return;
+    }
+    
+    soundEffects.playSubmit();
+    setSubmittedQuestions(prev => new Set([...prev, currentQuestion._id]));
+    
+    // Move to next question if not last
+    if (currentQuestionIndex < quiz.questions.length - 1) {
+      setTimeout(() => {
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+      }, 500);
+    }
   };
 
   const handleNextQuestion = () => {
@@ -75,41 +99,52 @@ const QuizPopup = ({ quiz, onComplete, onRetry, passed }) => {
       );
 
       setResult(response.data);
-      onComplete(response.data.passed, response.data.answers);
+      setShowReview(true); // Show review screen with answers
     } catch (error) {
       console.error('Error submitting quiz:', error);
-      // Fallback: simple validation
-      const correctAnswers = {
-        '1': 1, // 4
-        '2': 1, // 6
-        '3': 1, // 8
-        '4': 1, // 10
-        '5': 1  // 12
-      };
-      
-      let correctCount = 0;
-      quiz.questions.forEach(q => {
-        if (answers[q._id] === correctAnswers[q._id]) {
-          correctCount++;
-        }
+      // Fallback: get correct answers from quiz questions
+      const questionResults = quiz.questions.map(q => {
+        const isCorrect = answers[q._id] === q.correctAnswer;
+        return {
+          questionId: q._id,
+          question: q.question,
+          options: q.options,
+          userAnswer: answers[q._id],
+          correctAnswer: q.correctAnswer,
+          isCorrect,
+          explanation: q.explanation
+        };
       });
-
+      
+      const correctCount = questionResults.filter(r => r.isCorrect).length;
       const passed = correctCount >= 3;
       setResult({
         passed,
         correctAnswers: correctCount,
         totalQuestions: 5,
-        score: correctCount * 20
+        score: correctCount * 20,
+        answers: questionResults
       });
-      onComplete(passed, []);
+      setShowReview(true);
+    }
+  };
+
+  const handleContinueAfterReview = () => {
+    if (result && result.passed) {
+      onComplete(true, result.answers || []);
+    } else {
+      onRetry();
     }
   };
 
   const currentQuestion = quiz.questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / quiz.questions.length) * 100;
   const allAnswered = quiz.questions.every(q => answers[q._id] !== undefined && answers[q._id] !== null);
+  const isLastQuestion = currentQuestionIndex === quiz.questions.length - 1;
+  const isCurrentQuestionSubmitted = submittedQuestions.has(currentQuestion._id);
 
-  if (result) {
+  // Review screen - show all questions with correct/incorrect answers
+  if (showReview && result) {
     return (
       <div className="quiz-popup-overlay">
         <div className={`quiz-popup ${result.passed ? 'passed' : 'failed'}`}>
@@ -117,23 +152,78 @@ const QuizPopup = ({ quiz, onComplete, onRetry, passed }) => {
             {result.passed ? '🎉' : '❌'}
           </div>
           <h2>{result.passed ? 'Quiz Passed!' : 'Quiz Failed'}</h2>
-          <p>You got {result.correctAnswers} out of {result.totalQuestions} questions correct.</p>
+          <p className="result-summary">You got {result.correctAnswers} out of {result.totalQuestions} questions correct.</p>
+          
+          <div className="quiz-review-section">
+            <h3>Question Review</h3>
+            {quiz.questions.map((q, idx) => {
+              // Get result from backend response if available
+              const resultData = result.answers?.find(a => a.questionId === q._id || a.questionId?.toString() === q._id?.toString());
+              const userAnswer = resultData?.userAnswer !== undefined ? resultData.userAnswer : answers[q._id];
+              const correctAnswer = resultData?.correctAnswer !== undefined ? resultData.correctAnswer : q.correctAnswer;
+              const isCorrect = resultData?.isCorrect !== undefined ? resultData.isCorrect : userAnswer === correctAnswer;
+              const explanation = resultData?.explanation || q.explanation;
+              const options = resultData?.options || q.options;
+              
+              return (
+                <div key={q._id} className={`review-question-card ${isCorrect ? 'correct' : 'incorrect'}`}>
+                  <div className="review-question-header">
+                    <span className="review-question-number">Question {idx + 1}</span>
+                    <span className={`review-status ${isCorrect ? 'correct-badge' : 'incorrect-badge'}`}>
+                      {isCorrect ? '✓ Correct' : '✗ Incorrect'}
+                    </span>
+                  </div>
+                  
+                  <div className="review-question-text">
+                    <pre className="code-snippet">{q.question}</pre>
+                  </div>
+                  
+                  <div className="review-answers">
+                    <div className="review-answer-item">
+                      <strong>Your Answer:</strong>
+                      <span className={`user-answer ${isCorrect ? 'correct' : 'incorrect'}`}>
+                        {userAnswer !== undefined && userAnswer !== null 
+                          ? `${String.fromCharCode(65 + userAnswer)}. ${options?.[userAnswer] || 'Not answered'}`
+                          : 'Not answered'}
+                      </span>
+                    </div>
+                    {!isCorrect && correctAnswer !== undefined && correctAnswer !== null && (
+                      <div className="review-answer-item">
+                        <strong>Correct Answer:</strong>
+                        <span className="correct-answer">
+                          {String.fromCharCode(65 + correctAnswer)}. {options?.[correctAnswer]}
+                        </span>
+                      </div>
+                    )}
+                    {explanation && (
+                      <div className="review-explanation">
+                        <strong>Explanation:</strong>
+                        <p>{explanation}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
           <p className="result-message">
             {result.passed 
               ? 'Great job! You can continue playing.' 
               : 'You need at least 3 correct answers to continue. Try again!'}
           </p>
+          
           <div className="quiz-actions">
             {result.passed ? (
               <button 
-                onClick={() => onComplete(true, [])}
+                onClick={handleContinueAfterReview}
                 className="btn-continue"
               >
                 Continue Playing
               </button>
             ) : (
               <button 
-                onClick={onRetry}
+                onClick={handleContinueAfterReview}
                 className="btn-retry"
               >
                 Retry Quiz
@@ -145,6 +235,7 @@ const QuizPopup = ({ quiz, onComplete, onRetry, passed }) => {
     );
   }
 
+  // Main quiz screen
   return (
     <div className="quiz-popup-overlay">
       <div className="quiz-popup">
@@ -167,7 +258,7 @@ const QuizPopup = ({ quiz, onComplete, onRetry, passed }) => {
             <div className="question-header">
               <span className="question-number">Question {currentQuestionIndex + 1}</span>
               <span className="question-status">
-                {answers[currentQuestion._id] !== undefined ? '✓ Answered' : 'Not Answered'}
+                {isCurrentQuestionSubmitted ? '✓ Submitted' : answers[currentQuestion._id] !== undefined ? 'Selected' : 'Not Answered'}
               </span>
             </div>
             
@@ -176,17 +267,23 @@ const QuizPopup = ({ quiz, onComplete, onRetry, passed }) => {
             </div>
             
             <div className="options">
-              {currentQuestion.options?.map((option, index) => (
-                <button
-                  key={index}
-                  className={`option-btn ${answers[currentQuestion._id] === index ? 'selected' : ''}`}
-                  onClick={() => handleAnswerChange(currentQuestion._id, index)}
-                  onMouseEnter={() => soundEffects.playHover()}
-                >
-                  <span className="option-letter">{String.fromCharCode(65 + index)}</span>
-                  <span className="option-text">{option}</span>
-                </button>
-              ))}
+              {currentQuestion.options?.map((option, index) => {
+                const isSelected = answers[currentQuestion._id] === index;
+                const isDisabled = isCurrentQuestionSubmitted;
+                
+                return (
+                  <button
+                    key={index}
+                    className={`option-btn ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+                    onClick={() => handleAnswerChange(currentQuestion._id, index)}
+                    onMouseEnter={() => !isDisabled && soundEffects.playHover()}
+                    disabled={isDisabled}
+                  >
+                    <span className="option-letter">{String.fromCharCode(65 + index)}</span>
+                    <span className="option-text">{option}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -203,7 +300,7 @@ const QuizPopup = ({ quiz, onComplete, onRetry, passed }) => {
               {quiz.questions.map((q, idx) => (
                 <button
                   key={q._id}
-                  className={`question-indicator ${idx === currentQuestionIndex ? 'active' : ''} ${answers[q._id] !== undefined ? 'answered' : ''}`}
+                  className={`question-indicator ${idx === currentQuestionIndex ? 'active' : ''} ${submittedQuestions.has(q._id) ? 'submitted' : answers[q._id] !== undefined ? 'answered' : ''}`}
                   onClick={() => setCurrentQuestionIndex(idx)}
                 >
                   {idx + 1}
@@ -211,14 +308,7 @@ const QuizPopup = ({ quiz, onComplete, onRetry, passed }) => {
               ))}
             </div>
 
-            {currentQuestionIndex < quiz.questions.length - 1 ? (
-              <button
-                onClick={handleNextQuestion}
-                className="btn-nav"
-              >
-                Next →
-              </button>
-            ) : (
+            {isLastQuestion ? (
               <button
                 onClick={handleSubmitQuiz}
                 disabled={!allAnswered || submitted}
@@ -226,6 +316,24 @@ const QuizPopup = ({ quiz, onComplete, onRetry, passed }) => {
               >
                 {submitted ? 'Submitting...' : 'Submit Quiz'}
               </button>
+            ) : (
+              <div style={{ display: 'flex', gap: '10px' }}>
+                {!isCurrentQuestionSubmitted && (
+                  <button
+                    onClick={handleSubmitAnswer}
+                    disabled={answers[currentQuestion._id] === undefined}
+                    className="btn-submit-answer"
+                  >
+                    Submit Answer
+                  </button>
+                )}
+                <button
+                  onClick={handleNextQuestion}
+                  className="btn-nav"
+                >
+                  Next →
+                </button>
+              </div>
             )}
           </div>
         </div>
