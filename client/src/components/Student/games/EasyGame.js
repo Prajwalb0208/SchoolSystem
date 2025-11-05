@@ -27,7 +27,7 @@ const EasyGame = () => {
     fetchQuestion();
     
     // Initialize socket
-    const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
+    const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'https://schoolsystem-lyl7.onrender.com');
     newSocket.emit('join-game', {
       difficulty: 'easy',
       level: parseInt(level),

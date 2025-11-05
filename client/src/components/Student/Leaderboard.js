@@ -12,7 +12,7 @@ const Leaderboard = ({ difficulty, level }) => {
   useEffect(() => {
     fetchLeaderboard();
 
-    const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
+    const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'https://schoolsystem-lyl7.onrender.com');
     newSocket.on('leaderboard-update', (data) => {
       if (data.difficulty === difficulty && data.level === parseInt(level)) {
         setLeaderboard(data);
@@ -67,7 +67,7 @@ const Leaderboard = ({ difficulty, level }) => {
               <div className="student-info">
                 {entry.studentProfilePic ? (
                   <img
-                    src={`${process.env.REACT_APP_BASE_URL || 'http://localhost:5000'}${entry.studentProfilePic}`}
+                    src={`${process.env.REACT_APP_BASE_URL || 'https://schoolsystem-lyl7.onrender.com'}${entry.studentProfilePic}`}
                     alt={entry.studentName}
                     className="profile-pic"
                   />

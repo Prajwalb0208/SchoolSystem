@@ -62,7 +62,7 @@ const ProgressTracking = () => {
             <div className="student-photo">
               {progress.profilePicture ? (
                 <img
-                  src={`${process.env.REACT_APP_BASE_URL || 'http://localhost:5000'}${progress.profilePicture}`}
+                  src={`${process.env.REACT_APP_BASE_URL || 'https://schoolsystem-lyl7.onrender.com'}${progress.profilePicture}`}
                   alt={progress.name}
                 />
               ) : (

@@ -33,7 +33,7 @@ const HardGame = () => {
 
   useEffect(() => {
     soundEffects.updateSettings();
-    const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
+    const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'https://schoolsystem-lyl7.onrender.com');
     newSocket.emit('join-game', {
       difficulty: 'hard',
       level: parseInt(level),

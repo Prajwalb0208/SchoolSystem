@@ -115,7 +115,7 @@ const Profile = () => {
             <div className="profile-header">
               <div className="profile-picture">
                 {profile.profilePicture ? (
-                  <img src={`${process.env.REACT_APP_BASE_URL || 'http://localhost:5000'}${profile.profilePicture}`} alt="Profile" />
+                  <img src={`${process.env.REACT_APP_BASE_URL || 'https://schoolsystem-lyl7.onrender.com'}${profile.profilePicture}`} alt="Profile" />
                 ) : (
                   <div className="avatar-placeholder">{profile.name?.[0]?.toUpperCase()}</div>
                 )}

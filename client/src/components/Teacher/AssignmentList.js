@@ -13,7 +13,7 @@ const AssignmentList = () => {
     fetchAssignments();
 
     // Listen for new assignments
-    const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
+    const socket = io(process.env.REACT_APP_SOCKET_URL || 'https://schoolsystem-lyl7.onrender.com');
     socket.on('new-assignment', (data) => {
       fetchAssignments(); // Refresh list
     });
@@ -51,7 +51,7 @@ const AssignmentList = () => {
   };
 
   const notifyStudents = (assignmentId, title) => {
-    const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
+    const socket = io(process.env.REACT_APP_SOCKET_URL || 'https://schoolsystem-lyl7.onrender.com');
     socket.emit('assignment-created', { assignmentId, title });
   };
 

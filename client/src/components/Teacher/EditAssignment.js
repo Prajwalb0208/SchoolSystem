@@ -81,7 +81,7 @@ const EditAssignment = () => {
       );
 
       // Notify students
-      const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
+      const socket = io(process.env.REACT_APP_SOCKET_URL || 'https://schoolsystem-lyl7.onrender.com');
       socket.emit('assignment-created', {
         assignmentId: id,
         title: formData.title
