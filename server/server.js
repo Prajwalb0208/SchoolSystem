@@ -9,71 +9,65 @@ require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
-const allowedOrigins = [
-  process.env.CLIENT_URL,
-  'https://school-system-dfii.vercel.app',
-  'http://localhost:3000',
-  'http://localhost:5000'
-].filter(Boolean); // Remove undefined values
+// Allow all origins for CORS (no filters)
+const allowedOrigins = ['*']; // Allow all origins
 
 // Log allowed origins for debugging
-console.log('Allowed CORS origins:', allowedOrigins);
+console.log('CORS: Allowing all origins');
 
 const io = socketIo(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: function(origin, callback) {
+      callback(null, true); // Allow all origins
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true
   }
 });
 
-// Middleware - CORS configuration (must be before routes)
-// Add CORS headers to all responses
+// Middleware - CORS configuration (ALLOW ALL ORIGINS)
+// Add CORS headers to all responses - allow everything
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   
-  if (allowedOrigins.includes(origin)) {
+  // Allow all origins
+  if (origin) {
     res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    res.header('Access-Control-Expose-Headers', 'Content-Type, Authorization');
+  } else {
+    res.header('Access-Control-Allow-Origin', '*');
   }
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+  res.header('Access-Control-Expose-Headers', 'Content-Type, Authorization');
   
   next();
 });
 
-// Handle preflight OPTIONS requests explicitly
+// Handle preflight OPTIONS requests explicitly - allow all
 app.options('*', (req, res) => {
   const origin = req.headers.origin;
   
-  if (allowedOrigins.includes(origin)) {
+  if (origin) {
     res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Max-Age', '86400'); // 24 hours
-    return res.sendStatus(200);
   } else {
-    console.log('CORS blocked origin:', origin);
-    console.log('Allowed origins:', allowedOrigins);
-    return res.sendStatus(403);
+    res.header('Access-Control-Allow-Origin', '*');
   }
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Max-Age', '86400'); // 24 hours
+  return res.sendStatus(200);
 });
 
-// Also use cors middleware as backup
+// Also use cors middleware as backup - allow all
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+  origin: function(origin, callback) {
+    callback(null, true); // Allow all origins
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
