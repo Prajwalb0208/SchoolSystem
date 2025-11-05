@@ -66,6 +66,7 @@ const QuizPopup = ({ quiz, onComplete, onRetry, passed }) => {
           answers: answerArray,
           totalTimeTaken: 300,
           gameScore: quiz.gameScore || 0,
+          level: quiz.level || 1,
           usn: localStorage.getItem('studentUSN')
         },
         {

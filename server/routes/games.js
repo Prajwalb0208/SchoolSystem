@@ -8,8 +8,34 @@ const Checkpoint = require('../models/Checkpoint');
 const { auth, studentAuth } = require('../middleware/auth');
 const router = express.Router();
 
+// Optional auth middleware for quiz
+const optionalAuthQuiz = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (token) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+        let user = await Student.findById(decoded.id);
+        if (!user) {
+          const Teacher = require('../models/Teacher');
+          user = await Teacher.findById(decoded.id);
+        }
+        if (user) {
+          req.userId = decoded.id;
+        }
+      } catch (error) {
+        // Token invalid, continue without auth
+      }
+    }
+    next();
+  } catch (error) {
+    next();
+  }
+};
+
 // Get quiz (5 questions) - coding questions only, no repeats, random order
-router.get('/quiz/:gameType', auth, async (req, res) => {
+router.get('/quiz/:gameType', optionalAuthQuiz, async (req, res) => {
   try {
     const { gameType } = req.params;
     const { usn } = req.query;
@@ -94,9 +120,9 @@ router.get('/quiz/:gameType', auth, async (req, res) => {
 });
 
 // Submit quiz (all 5 answers at once) - track game progress
-router.post('/submit-quiz', auth, async (req, res) => {
+router.post('/submit-quiz', optionalAuthQuiz, async (req, res) => {
   try {
-    const { gameType, answers, totalTimeTaken, gameScore, usn } = req.body;
+    const { gameType, answers, totalTimeTaken, gameScore, level, usn } = req.body;
     
     if (!answers || !Array.isArray(answers) || answers.length !== 5) {
       return res.status(400).json({ message: 'Please provide answers for all 5 questions' });
@@ -179,38 +205,42 @@ router.post('/submit-quiz', auth, async (req, res) => {
       });
 
       // Save individual game session for tracking
-      const gameSession = new GameSession({
-        studentId: req.userId,
-        difficulty: question.difficulty || 'easy',
-        level: question.level || 1,
-        questionId: question._id,
-        answer: answerData.answer,
-        isCorrect,
-        timeTaken: answerData.timeTaken,
-        score,
-        endTime: new Date()
-      });
-      await gameSession.save();
+      if (student._id) {
+        const gameSession = new GameSession({
+          studentId: student._id,
+          difficulty: question.difficulty || 'easy',
+          level: level || question.level || 1,
+          questionId: question._id,
+          answer: answerData.answer,
+          isCorrect,
+          timeTaken: answerData.timeTaken,
+          score,
+          endTime: new Date()
+        });
+        await gameSession.save();
+      }
     }
 
     // Check if passed (at least 3 correct out of 5)
     const passed = correctCount >= 3;
 
     // Save quiz session
-    const quizSession = new QuizSession({
-      studentId: req.userId,
-      difficulty: 'easy',
-      level: 1,
-      questionIds,
-      answers: quizAnswers,
-      endTime: new Date(),
-      totalTimeTaken,
-      correctAnswers: correctCount,
-      totalQuestions: 5,
-      passed,
-      score: totalScore
-    });
-    await quizSession.save();
+    if (student._id) {
+      const quizSession = new QuizSession({
+        studentId: student._id,
+        difficulty: 'easy',
+        level: level || 1,
+        questionIds,
+        answers: quizAnswers,
+        endTime: new Date(),
+        totalTimeTaken,
+        correctAnswers: correctCount,
+        totalQuestions: 5,
+        passed,
+        score: totalScore
+      });
+      await quizSession.save();
+    }
 
     // Track answered questions (prevent repeats)
     const newAnsweredQuestions = [...new Set([
@@ -230,8 +260,10 @@ router.post('/submit-quiz', auth, async (req, res) => {
           totalScore: gameScore || 0,
           gamesPlayed: 1,
           quizzesPassed: passed ? 1 : 0,
-          lastPlayed: new Date()
+          lastPlayed: new Date(),
+          levelProgress: {}
         });
+        gameIndex = gameProgress.length - 1;
       } else {
         gameProgress[gameIndex].totalScore += (gameScore || 0);
         gameProgress[gameIndex].gamesPlayed += 1;
@@ -240,6 +272,22 @@ router.post('/submit-quiz', auth, async (req, res) => {
         }
         gameProgress[gameIndex].lastPlayed = new Date();
       }
+      
+      // Update level-specific progress
+      const currentLevel = level || 1;
+      if (!gameProgress[gameIndex].levelProgress) {
+        gameProgress[gameIndex].levelProgress = {};
+      }
+      const levelProgress = gameProgress[gameIndex].levelProgress || {};
+      const levelKey = currentLevel.toString();
+      const currentLevelData = levelProgress[levelKey] || { score: 0, quizzesPassed: 0 };
+      currentLevelData.score += (gameScore || 0);
+      if (passed) {
+        currentLevelData.quizzesPassed += 1;
+      }
+      levelProgress[levelKey] = currentLevelData;
+      gameProgress[gameIndex].levelProgress = levelProgress;
+      
       student.gameProgress = gameProgress;
     }
 

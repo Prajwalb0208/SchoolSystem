@@ -30,6 +30,8 @@ const Game = () => {
   const startTimeRef = useRef(Date.now());
 
   const handleTimeUp = useCallback(async () => {
+    if (showQuiz) return; // Prevent multiple triggers
+    
     setGameRunning(false);
     setIsPaused(true);
     soundEffects.playTimeWarning();
@@ -37,17 +39,35 @@ const Game = () => {
     try {
       const token = localStorage.getItem('token');
       const usn = localStorage.getItem('studentUSN');
+      
+      if (!usn) {
+        alert('Please enter your USN first. Redirecting to home...');
+        navigate('/');
+        return;
+      }
+      
       const response = await axios.get(`${API_URL}/games/quiz/${gameType}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         params: { usn }
       });
-      setQuizData({ ...response.data, gameScore, level: currentLevel });
-      setShowQuiz(true);
+      
+      if (response.data && response.data.questions && response.data.questions.length > 0) {
+        setQuizData({ ...response.data, gameScore, level: currentLevel });
+        setShowQuiz(true);
+      } else {
+        alert('No quiz questions available. Please try again later.');
+        setGameRunning(true);
+        setIsPaused(false);
+      }
     } catch (error) {
       console.error('Error fetching quiz:', error);
-      alert('Error loading quiz. Please try again.');
+      const errorMsg = error.response?.data?.message || error.message || 'Failed to load quiz';
+      alert(`Error loading quiz: ${errorMsg}. Please try again.`);
+      // Reset game state on error
+      setGameRunning(true);
+      setIsPaused(false);
     }
-  }, [gameType, gameScore, currentLevel]);
+  }, [gameType, gameScore, currentLevel, showQuiz, navigate]);
 
   useEffect(() => {
     soundEffects.updateSettings();

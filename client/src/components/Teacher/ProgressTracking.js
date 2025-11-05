@@ -7,22 +7,48 @@ const ProgressTracking = () => {
   const { API_URL } = useAuth();
   const [usn, setUsn] = useState('');
   const [progress, setProgress] = useState(null);
+  const [allStudents, setAllStudents] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingStudents, setLoadingStudents] = useState(false);
   const [error, setError] = useState('');
   const [autoRefresh, setAutoRefresh] = useState(false);
 
-  const fetchProgress = async () => {
-    if (!usn.trim()) return;
+  // Fetch all students on component mount
+  useEffect(() => {
+    fetchAllStudents();
+  }, []);
+
+  const fetchAllStudents = async () => {
+    setLoadingStudents(true);
+    setError('');
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/progress/all`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      setAllStudents(response.data || []);
+    } catch (error) {
+      console.error('Error fetching all students:', error);
+      setError('Failed to load students. ' + (error.response?.data?.message || ''));
+    } finally {
+      setLoadingStudents(false);
+    }
+  };
+
+  const fetchProgress = async (studentUsn) => {
+    if (!studentUsn || !studentUsn.trim()) return;
 
     setLoading(true);
     setError('');
     
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/progress/student/${usn}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const response = await axios.get(`${API_URL}/progress/student/${studentUsn}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       setProgress(response.data);
+      setUsn(studentUsn);
     } catch (error) {
       setError(error.response?.data?.message || 'Student not found');
       setProgress(null);
@@ -33,13 +59,17 @@ const ProgressTracking = () => {
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    await fetchProgress();
+    await fetchProgress(usn);
+  };
+
+  const handleStudentClick = (studentUsn) => {
+    fetchProgress(studentUsn);
   };
 
   useEffect(() => {
     if (autoRefresh && usn.trim()) {
       const interval = setInterval(() => {
-        fetchProgress();
+        fetchProgress(usn);
       }, 5000); // Refresh every 5 seconds
       return () => clearInterval(interval);
     }
@@ -57,7 +87,6 @@ const ProgressTracking = () => {
             value={usn}
             onChange={(e) => setUsn(e.target.value.toUpperCase())}
             placeholder="Enter Student USN (e.g., 1MS20CS001)"
-            required
           />
         </div>
         <button type="submit" className="btn btn-primary" disabled={loading}>
@@ -74,6 +103,58 @@ const ProgressTracking = () => {
           </button>
         )}
       </form>
+
+      {/* All Students List */}
+      <div className="students-list-section">
+        <h2>All Students</h2>
+        {loadingStudents ? (
+          <div className="loading">Loading students...</div>
+        ) : allStudents.length > 0 ? (
+          <div className="students-grid">
+            {allStudents.map((student) => (
+              <div 
+                key={student._id || student.usn} 
+                className={`student-card ${progress?.usn === student.usn ? 'selected' : ''}`}
+                onClick={() => handleStudentClick(student.usn)}
+              >
+                <div className="student-card-header">
+                  {student.profilePicture ? (
+                    <img
+                      src={`${process.env.REACT_APP_BASE_URL || 'https://schoolsystem-lyl7.onrender.com'}${student.profilePicture}`}
+                      alt={student.name}
+                      className="student-card-photo"
+                    />
+                  ) : (
+                    <div className="student-card-photo-placeholder">
+                      {student.name?.[0]?.toUpperCase() || student.usn?.[0]?.toUpperCase()}
+                    </div>
+                  )}
+                  <div className="student-card-info">
+                    <h3>{student.name || student.usn}</h3>
+                    <p className="student-usn">{student.usn}</p>
+                  </div>
+                </div>
+                <div className="student-card-stats">
+                  <div className="stat-mini">
+                    <span className="stat-label">Streak:</span>
+                    <span className="stat-value">{student.streakLevel || 0}</span>
+                  </div>
+                  <div className="stat-mini">
+                    <span className="stat-label">Badges:</span>
+                    <span className="stat-value">{student.totalBadges || 0}</span>
+                  </div>
+                  <div className="stat-mini">
+                    <span className="stat-label">Wins:</span>
+                    <span className="stat-value">{student.wins || 0}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="no-students">No students found</div>
+        )}
+      </div>
 
       {error && <div className="error-message">{error}</div>}
 
@@ -180,4 +261,3 @@ const ProgressTracking = () => {
 };
 
 export default ProgressTracking;
-
