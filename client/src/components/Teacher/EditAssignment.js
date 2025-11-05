@@ -81,7 +81,7 @@ const EditAssignment = () => {
       );
 
       // Notify students
-      const socket = io(process.env.REACT_APP_SOCKET_URL || 'https://school-system-lxrvdmotp-prajwalb0208s-projects.vercel.app');
+      const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
       socket.emit('assignment-created', {
         assignmentId: id,
         title: formData.title

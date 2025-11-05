@@ -13,7 +13,7 @@ const AssignmentList = () => {
     fetchAssignments();
 
     // Listen for new assignments
-    const socket = io(process.env.REACT_APP_SOCKET_URL || 'https://school-system-lxrvdmotp-prajwalb0208s-projects.vercel.app');
+    const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
     socket.on('new-assignment', (data) => {
       fetchAssignments(); // Refresh list
     });
@@ -51,7 +51,7 @@ const AssignmentList = () => {
   };
 
   const notifyStudents = (assignmentId, title) => {
-    const socket = io(process.env.REACT_APP_SOCKET_URL || 'https://school-system-lxrvdmotp-prajwalb0208s-projects.vercel.app');
+    const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
     socket.emit('assignment-created', { assignmentId, title });
   };
 

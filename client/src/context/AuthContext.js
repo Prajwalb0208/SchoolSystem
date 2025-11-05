@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
 
-  const API_URL = process.env.REACT_APP_API_URL || 'https://school-system-lxrvdmotp-prajwalb0208s-projects.vercel.app/api';
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
   
   // Debug: Log the API URL being used
   useEffect(() => {
@@ -38,6 +38,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password, userType) => {
     try {
+      console.log('Login attempt:', { username, userType, API_URL });
       const response = await axios.post(`${API_URL}/auth/${userType}/login`, {
         username,
         password
@@ -54,9 +55,23 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true };
     } catch (error) {
+      console.error('Login error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      let errorMessage = 'Login failed';
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.errors) {
+        errorMessage = error.response.data.errors.map(e => e.msg).join(', ');
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       return {
         success: false,
-        message: error.response?.data?.message || 'Login failed'
+        message: errorMessage
       };
     }
   };

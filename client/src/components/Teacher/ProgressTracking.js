@@ -62,7 +62,7 @@ const ProgressTracking = () => {
             <div className="student-photo">
               {progress.profilePicture ? (
                 <img
-                  src={`${process.env.REACT_APP_BASE_URL || 'https://school-system-lxrvdmotp-prajwalb0208s-projects.vercel.app'}${progress.profilePicture}`}
+                  src={`${process.env.REACT_APP_BASE_URL || 'http://localhost:5000'}${progress.profilePicture}`}
                   alt={progress.name}
                 />
               ) : (

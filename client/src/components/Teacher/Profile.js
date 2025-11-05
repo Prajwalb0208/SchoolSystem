@@ -94,7 +94,7 @@ const Profile = () => {
             <div className="profile-header">
               <div className="profile-picture">
                 {profile.profilePicture ? (
-                  <img src={`${process.env.REACT_APP_BASE_URL || 'https://school-system-lxrvdmotp-prajwalb0208s-projects.vercel.app'}${profile.profilePicture}`} alt="Profile" />
+                  <img src={`${process.env.REACT_APP_BASE_URL || 'http://localhost:5000'}${profile.profilePicture}`} alt="Profile" />
                 ) : (
                   <div className="avatar-placeholder">{profile.username?.[0]?.toUpperCase()}</div>
                 )}

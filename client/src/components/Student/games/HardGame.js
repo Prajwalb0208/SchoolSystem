@@ -33,7 +33,7 @@ const HardGame = () => {
 
   useEffect(() => {
     soundEffects.updateSettings();
-    const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'https://school-system-lxrvdmotp-prajwalb0208s-projects.vercel.app');
+    const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
     newSocket.emit('join-game', {
       difficulty: 'hard',
       level: parseInt(level),
