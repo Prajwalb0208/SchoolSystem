@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import Profile from './Profile';
 import ProgressTracking from './ProgressTracking';
+import Settings from './Settings';
 import './TeacherDashboard.css';
 
 const TeacherDashboard = () => {
@@ -34,6 +35,13 @@ const TeacherDashboard = () => {
             Student Progress
           </Link>
           <Link 
+            to="/teacher/settings" 
+            className={activeTab === 'settings' ? 'active' : ''}
+            onClick={() => setActiveTab('settings')}
+          >
+            Settings
+          </Link>
+          <Link 
             to="/teacher/profile" 
             className={activeTab === 'profile' ? 'active' : ''}
             onClick={() => setActiveTab('profile')}
@@ -48,6 +56,7 @@ const TeacherDashboard = () => {
         <Routes>
           <Route path="/dashboard" element={<DashboardHome />} />
           <Route path="/progress" element={<ProgressTracking />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/profile" element={<Profile />} />
         </Routes>
       </div>

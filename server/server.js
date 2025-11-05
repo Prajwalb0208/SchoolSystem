@@ -93,6 +93,7 @@ app.use('/api/games', require('./routes/games'));
 app.use('/api/assignments', require('./routes/assignments'));
 app.use('/api/progress', require('./routes/progress'));
 app.use('/api/notes', require('./routes/notes'));
+app.use('/api/settings', require('./routes/settings'));
 
 // Serve static files from React app build
 const buildPath = path.join(__dirname, '../client/build');

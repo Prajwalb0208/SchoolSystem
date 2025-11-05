@@ -17,7 +17,8 @@ const API_URL = process.env.REACT_APP_API_URL || 'https://schoolsystem-lyl7.onre
 const Game = () => {
   const { gameType } = useParams();
   const navigate = useNavigate();
-  const [gameTime, setGameTime] = useState(300); // 5 minutes
+  const [gameTimeLimit, setGameTimeLimit] = useState(300); // Default 5 minutes, will be fetched from settings
+  const [gameTime, setGameTime] = useState(300); // Current time remaining
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizData, setQuizData] = useState(null);
   const [quizPassed, setQuizPassed] = useState(false);
@@ -28,6 +29,22 @@ const Game = () => {
   const [progress, setProgress] = useState(0); // 0-100 for progress bar
   const lastWarningTimeRef = useRef(0);
   const startTimeRef = useRef(Date.now());
+
+  // Fetch game settings on mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/settings`);
+        const timeLimit = response.data.gameTimeLimit || 300;
+        setGameTimeLimit(timeLimit);
+        setGameTime(timeLimit);
+      } catch (error) {
+        console.error('Error fetching settings:', error);
+        // Use default if fetch fails
+      }
+    };
+    fetchSettings();
+  }, []);
 
   const handleTimeUp = useCallback(async () => {
     if (showQuiz) return; // Prevent multiple triggers
@@ -84,9 +101,8 @@ const Game = () => {
             soundEffects.playTimeWarning();
             lastWarningTimeRef.current = Date.now();
           }
-          // Update progress bar (0-100 based on time elapsed)
-          const elapsed = 300 - prev;
-          setProgress((elapsed / 300) * 100);
+          const elapsed = gameTimeLimit - prev;
+          setProgress((elapsed / gameTimeLimit) * 100);
           return prev - 1;
         });
       }, 1000);
@@ -101,7 +117,7 @@ const Game = () => {
     if (passed) {
       soundEffects.playSuccess();
       // Reset timer for next session but keep game paused
-      setGameTime(300);
+      setGameTime(gameTimeLimit);
       setProgress(0);
       // Keep game paused - don't advance level or reset score
       setGameRunning(false);
@@ -138,7 +154,7 @@ const Game = () => {
 
   const handleRestart = () => {
     if (window.confirm('Are you sure you want to restart? All progress will be lost.')) {
-      setGameTime(300);
+      setGameTime(gameTimeLimit);
       setGameRunning(true);
       setIsPaused(false);
       setShowQuiz(false);
