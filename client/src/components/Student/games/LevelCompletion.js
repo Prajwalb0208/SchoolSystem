@@ -13,6 +13,9 @@ const LevelCompletion = ({
   timeTaken,
   nextLevelPath,
   onClose,
+  onRetry,
+  showRetry = false,
+  answers = null,
   specialAchievement = null
 }) => {
   const navigate = useNavigate();
@@ -138,8 +141,18 @@ const LevelCompletion = ({
 
         {explanation && (
           <div className="explanation-section">
-            <h3>Explanation</h3>
+            <h3>{showRetry ? 'Quiz Results' : 'Explanation'}</h3>
             <p>{explanation}</p>
+            {answers && (
+              <div className="quiz-answers-summary">
+                {answers.map((ans, idx) => (
+                  <div key={idx} className={`answer-item ${ans.isCorrect ? 'correct' : 'incorrect'}`}>
+                    <span className="answer-number">Q{idx + 1}</span>
+                    <span className="answer-status">{ans.isCorrect ? '✓ Correct' : '✗ Incorrect'}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -153,12 +166,23 @@ const LevelCompletion = ({
               {level >= maxLevel ? '🎮 Back to Games' : 'Next Level →'}
             </button>
           ) : (
-            <button 
-              onClick={handleNext}
-              className="btn-retry"
-            >
-              🔄 Try Again
-            </button>
+            <>
+              {showRetry && onRetry ? (
+                <button 
+                  onClick={onRetry}
+                  className="btn-retry"
+                >
+                  🔄 Retry Quiz
+                </button>
+              ) : (
+                <button 
+                  onClick={handleNext}
+                  className="btn-retry"
+                >
+                  🔄 Try Again
+                </button>
+              )}
+            </>
           )}
         </div>
 

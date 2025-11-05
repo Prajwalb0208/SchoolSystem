@@ -19,6 +19,7 @@ const EditAssignment = () => {
 
   useEffect(() => {
     fetchAssignment();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchAssignment = async () => {

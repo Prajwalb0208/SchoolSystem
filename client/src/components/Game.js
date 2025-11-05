@@ -1,0 +1,264 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import QuizPopup from './QuizPopup';
+import GameControls from './GameControls';
+import soundEffects from '../utils/soundEffects';
+import BlockRush from './games/BlockRush';
+import SnakeGame from './games/SnakeGame';
+import MemoryGame from './games/MemoryGame';
+import MinesweeperGame from './games/MinesweeperGame';
+import Game2048 from './games/Game2048';
+import SudokuGame from './games/SudokuGame';
+import './Game.css';
+
+const API_URL = process.env.REACT_APP_API_URL || 'https://schoolsystem-lyl7.onrender.com/api';
+
+const Game = () => {
+  const { gameType } = useParams();
+  const navigate = useNavigate();
+  const [gameTime, setGameTime] = useState(300); // 5 minutes
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [quizData, setQuizData] = useState(null);
+  const [quizPassed, setQuizPassed] = useState(false);
+  const [gameRunning, setGameRunning] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
+  const [gameScore, setGameScore] = useState(0);
+  const [currentLevel, setCurrentLevel] = useState(1);
+  const [progress, setProgress] = useState(0); // 0-100 for progress bar
+  const lastWarningTimeRef = useRef(0);
+  const startTimeRef = useRef(Date.now());
+
+  const handleTimeUp = useCallback(async () => {
+    setGameRunning(false);
+    setIsPaused(true);
+    soundEffects.playTimeWarning();
+    
+    try {
+      const token = localStorage.getItem('token');
+      const usn = localStorage.getItem('studentUSN');
+      const response = await axios.get(`${API_URL}/games/quiz/${gameType}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        params: { usn }
+      });
+      setQuizData({ ...response.data, gameScore, level: currentLevel });
+      setShowQuiz(true);
+    } catch (error) {
+      console.error('Error fetching quiz:', error);
+      alert('Error loading quiz. Please try again.');
+    }
+  }, [gameType, gameScore, currentLevel]);
+
+  useEffect(() => {
+    soundEffects.updateSettings();
+    
+    let timer;
+    if (gameRunning && !showQuiz && !isPaused) {
+      timer = setInterval(() => {
+        setGameTime((prev) => {
+          if (prev <= 1) {
+            handleTimeUp();
+            return 0;
+          }
+          if (prev <= 60 && prev % 10 === 0 && Date.now() - lastWarningTimeRef.current > 9000) {
+            soundEffects.playTimeWarning();
+            lastWarningTimeRef.current = Date.now();
+          }
+          // Update progress bar (0-100 based on time elapsed)
+          const elapsed = 300 - prev;
+          setProgress((elapsed / 300) * 100);
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => clearInterval(timer);
+  }, [gameRunning, showQuiz, isPaused, handleTimeUp]);
+
+  const handleQuizComplete = async (passed, quizAnswers) => {
+    setQuizPassed(passed);
+    
+    if (passed) {
+      soundEffects.playSuccess();
+      setGameTime(300);
+      setGameRunning(true);
+      setIsPaused(false);
+      setShowQuiz(false);
+      setQuizData(null);
+      setGameScore(0);
+      setProgress(0);
+      if (currentLevel < 5) {
+        setCurrentLevel(prev => prev + 1);
+      } else {
+        setCurrentLevel(1);
+      }
+      startTimeRef.current = Date.now();
+    } else {
+      soundEffects.playError();
+    }
+  };
+
+  const handleRetry = () => {
+    setShowQuiz(false);
+    setQuizData(null);
+    setQuizPassed(false);
+    handleTimeUp();
+  };
+
+  const handlePause = () => {
+    setIsPaused(true);
+    soundEffects.playClick();
+  };
+
+  const handleResume = () => {
+    setIsPaused(false);
+    soundEffects.playClick();
+  };
+
+  const handleRestart = () => {
+    if (window.confirm('Are you sure you want to restart? All progress will be lost.')) {
+      setGameTime(300);
+      setGameRunning(true);
+      setIsPaused(false);
+      setShowQuiz(false);
+      setQuizData(null);
+      setGameScore(0);
+      setProgress(0);
+      setCurrentLevel(1);
+      startTimeRef.current = Date.now();
+      soundEffects.playClick();
+    }
+  };
+
+  const handleQuit = () => {
+    if (window.confirm('Are you sure you want to quit? All progress will be lost.')) {
+      navigate('/games');
+      soundEffects.playClick();
+    }
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const renderGame = () => {
+    const gameProps = { 
+      gameRunning: gameRunning && !isPaused, 
+      onScoreChange: setGameScore,
+      isPaused,
+      level: currentLevel,
+      onLevelComplete: () => {
+        if (currentLevel < 5) {
+          setCurrentLevel(prev => prev + 1);
+          setGameScore(0);
+        }
+      }
+    };
+    
+    switch(gameType) {
+      case 'blockrush':
+        return <BlockRush {...gameProps} />;
+      case 'snake':
+        return <SnakeGame {...gameProps} />;
+      case 'memory':
+        return <MemoryGame {...gameProps} />;
+      case 'minesweeper':
+        return <MinesweeperGame {...gameProps} />;
+      case '2048':
+        return <Game2048 {...gameProps} />;
+      case 'sudoku':
+        return <SudokuGame {...gameProps} />;
+      default:
+        return <div>Game not found</div>;
+    }
+  };
+
+  const gameNames = {
+    blockrush: 'Block Rush',
+    snake: 'Snake Game',
+    memory: 'Memory Match',
+    minesweeper: 'Minesweeper',
+    2048: '2048 Game',
+    sudoku: 'Sudoku'
+  };
+
+  return (
+    <div className="game-container">
+      <div className="game-header">
+        <h1>🎮 {gameNames[gameType] || 'Game'}</h1>
+        <div className="game-stats">
+          <div className="stat-item">
+            <span className="stat-label">Score</span>
+            <span className="stat-value">{gameScore}</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-label">Level</span>
+            <span className="stat-value">{currentLevel}/5</span>
+          </div>
+        </div>
+        <div className={`timer ${gameTime < 60 ? 'warning' : ''}`}>
+          Time: {formatTime(gameTime)}
+        </div>
+      </div>
+
+      <div className="progress-bar-container">
+        <div className="progress-bar-label">Progress: {Math.round(progress)}%</div>
+        <div className="progress-bar">
+          <div 
+            className="progress-bar-fill" 
+            style={{ width: `${progress}%` }}
+          ></div>
+        </div>
+      </div>
+
+      <GameControls
+        isPaused={isPaused}
+        onPause={handlePause}
+        onResume={handleResume}
+        onRestart={handleRestart}
+        onQuit={handleQuit}
+      />
+
+      {isPaused && !showQuiz && (
+        <div className="pause-overlay">
+          <h2>⏸️ Game Paused</h2>
+          <p>Click Resume to continue playing</p>
+        </div>
+      )}
+
+      <div className="game-content">
+        {gameRunning && !showQuiz ? (
+          renderGame()
+        ) : (
+          <div className="game-paused">
+            <h2>⏸️ Game Paused</h2>
+            <p>Complete the quiz to continue playing</p>
+            <div className="current-stats">
+              <div className="stat-box">
+                <span className="stat-label">Current Score</span>
+                <span className="stat-value-large">{gameScore}</span>
+              </div>
+              <div className="stat-box">
+                <span className="stat-label">Current Level</span>
+                <span className="stat-value-large">{currentLevel}</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {showQuiz && quizData && (
+        <QuizPopup
+          quiz={quizData}
+          onComplete={handleQuizComplete}
+          onRetry={handleRetry}
+          passed={quizPassed}
+        />
+      )}
+    </div>
+  );
+};
+
+export default Game;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import './ProgressTracking.css';
@@ -9,13 +9,10 @@ const ProgressTracking = () => {
   const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [autoRefresh, setAutoRefresh] = useState(false);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!usn.trim()) {
-      setError('Please enter a USN');
-      return;
-    }
+  const fetchProgress = async () => {
+    if (!usn.trim()) return;
 
     setLoading(true);
     setError('');
@@ -33,6 +30,20 @@ const ProgressTracking = () => {
       setLoading(false);
     }
   };
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    await fetchProgress();
+  };
+
+  useEffect(() => {
+    if (autoRefresh && usn.trim()) {
+      const interval = setInterval(() => {
+        fetchProgress();
+      }, 5000); // Refresh every 5 seconds
+      return () => clearInterval(interval);
+    }
+  }, [autoRefresh, usn]);
 
   return (
     <div className="progress-container">
@@ -52,6 +63,16 @@ const ProgressTracking = () => {
         <button type="submit" className="btn btn-primary" disabled={loading}>
           {loading ? 'Searching...' : 'Search'}
         </button>
+        {progress && (
+          <button 
+            type="button" 
+            className={`btn ${autoRefresh ? 'btn-danger' : 'btn-success'}`}
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            style={{ marginLeft: '10px' }}
+          >
+            {autoRefresh ? '⏸️ Stop Auto-Refresh' : '▶️ Start Auto-Refresh'}
+          </button>
+        )}
       </form>
 
       {error && <div className="error-message">{error}</div>}
@@ -72,10 +93,10 @@ const ProgressTracking = () => {
               )}
             </div>
             <div className="student-info">
-              <h2>{progress.name}</h2>
+              <h2>{progress.name || progress.usn}</h2>
               <p><strong>USN:</strong> {progress.usn}</p>
-              <p><strong>Email:</strong> {progress.email}</p>
-              <p><strong>Phone:</strong> {progress.phone}</p>
+              <p><strong>Email:</strong> {progress.email || 'N/A'}</p>
+              <p><strong>Phone:</strong> {progress.phone || 'N/A'}</p>
             </div>
           </div>
 
@@ -106,39 +127,25 @@ const ProgressTracking = () => {
           </div>
 
           <div className="level-progress">
-            <h3>Level Completion</h3>
-            <div className="level-item">
-              <span>Easy Levels:</span>
-              <span className="level-count">{progress.easyLevelCompleted || 0}/50</span>
-              <div className="progress-bar">
-                <div
-                  className="progress-fill"
-                  style={{ width: `${((progress.easyLevelCompleted || 0) / 50) * 100}%` }}
-                ></div>
-              </div>
-            </div>
-
-            <div className="level-item">
-              <span>Intermediate Levels:</span>
-              <span className="level-count">{progress.intermediateLevelCompleted || 0}/100</span>
-              <div className="progress-bar">
-                <div
-                  className="progress-fill"
-                  style={{ width: `${((progress.intermediateLevelCompleted || 0) / 100) * 100}%` }}
-                ></div>
-              </div>
-            </div>
-
-            <div className="level-item">
-              <span>Hard Levels:</span>
-              <span className="level-count">{progress.hardLevelCompleted || 0}/50</span>
-              <div className="progress-bar">
-                <div
-                  className="progress-fill"
-                  style={{ width: `${((progress.hardLevelCompleted || 0) / 50) * 100}%` }}
-                ></div>
-              </div>
-            </div>
+            <h3>Game Progress by Game Type</h3>
+            {progress.gameProgress && progress.gameProgress.length > 0 ? (
+              progress.gameProgress.map((game, idx) => (
+                <div key={idx} className="level-item">
+                  <span className="game-name">{game.gameType.charAt(0).toUpperCase() + game.gameType.slice(1)}:</span>
+                  <span className="level-count">
+                    Score: {game.totalScore || 0} | Games: {game.gamesPlayed || 0} | Quizzes Passed: {game.quizzesPassed || 0}
+                  </span>
+                  <div className="progress-bar">
+                    <div
+                      className="progress-fill"
+                      style={{ width: `${Math.min(((game.quizzesPassed || 0) / Math.max(game.gamesPlayed || 1, 1)) * 100, 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p>No game progress yet</p>
+            )}
           </div>
 
           {progress.badges && progress.badges.length > 0 && (

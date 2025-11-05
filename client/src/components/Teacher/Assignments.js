@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Routes, Route, Link } from 'react-router-dom';
-import axios from 'axios';
-import { useAuth } from '../../context/AuthContext';
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
 import AssignmentList from './AssignmentList';
 import CreateAssignment from './CreateAssignment';
 import EditAssignment from './EditAssignment';

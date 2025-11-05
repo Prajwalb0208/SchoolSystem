@@ -1,0 +1,229 @@
+.memory-game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  padding: 20px;
+}
+
+.memory-board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  max-width: 800px;
+  width: 100%;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+}
+
+/* Dynamic grid columns based on card count */
+.memory-board[data-cards="6"] {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.memory-board[data-cards="8"] {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.memory-board[data-cards="10"] {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.memory-board[data-cards="12"] {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.memory-board[data-cards="14"] {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.memory-card {
+  aspect-ratio: 1;
+  position: relative;
+  cursor: pointer;
+  transform-style: preserve-3d;
+  transition: transform 0.6s;
+  min-height: 120px;
+}
+
+.memory-card.flipped {
+  transform: rotateY(180deg);
+}
+
+.card-front,
+.card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3em;
+  border-radius: 12px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.card-front {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: bold;
+}
+
+.card-back {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  transform: rotateY(180deg);
+}
+
+.memory-card:hover .card-front {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.game-over-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.95);
+  color: white;
+  padding: 50px;
+  border-radius: 20px;
+  text-align: center;
+  z-index: 10;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  min-width: 300px;
+}
+
+.game-over-overlay h2 {
+  margin: 0 0 20px 0;
+  font-size: 2.5em;
+  color: #10b981;
+  text-shadow: 0 2px 10px rgba(16, 185, 129, 0.5);
+}
+
+.game-over-overlay p {
+  margin: 10px 0;
+  font-size: 1.2em;
+}
+
+.game-over-buttons {
+  display: flex;
+  gap: 15px;
+  margin-top: 30px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.retry-btn,
+.checkpoint-btn {
+  padding: 12px 24px;
+  font-size: 1.1em;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.retry-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.retry-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.checkpoint-btn {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.checkpoint-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+}
+
+.memory-stats {
+  display: flex;
+  gap: 30px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 20px 40px;
+  border-radius: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.stat-display {
+  color: white;
+  font-size: 1.2em;
+  font-weight: bold;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.checkpoint-controls {
+  margin-top: 15px;
+  width: 100%;
+  max-width: 600px;
+}
+
+.save-checkpoint-btn {
+  width: 100%;
+  padding: 15px;
+  font-size: 1.1em;
+  font-weight: bold;
+  background: rgba(16, 185, 129, 0.2);
+  border: 2px solid rgba(16, 185, 129, 0.5);
+  color: white;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.save-checkpoint-btn:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+}
+
+.save-checkpoint-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .memory-board {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .memory-card {
+    min-height: 100px;
+  }
+
+  .card-front,
+  .card-back {
+    font-size: 2em;
+  }
+
+  .memory-stats {
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px 20px;
+  }
+
+  .game-over-overlay {
+    padding: 30px;
+    min-width: 250px;
+  }
+}
+

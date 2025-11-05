@@ -99,6 +99,29 @@ const studentSchema = new mongoose.Schema({
     position: Number,
     score: Number,
     completedAt: Date
+  }],
+  gameProgress: [{
+    gameType: {
+      type: String,
+      enum: ['blockrush', 'snake', 'memory', 'typing', 'puzzle', 'arrows', 'pieces', 'shooter', 'brick', 'minesweeper', '2048', 'sudoku', 'flappy']
+    },
+    totalScore: {
+      type: Number,
+      default: 0
+    },
+    gamesPlayed: {
+      type: Number,
+      default: 0
+    },
+    quizzesPassed: {
+      type: Number,
+      default: 0
+    },
+    lastPlayed: Date
+  }],
+  answeredQuestions: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Question'
   }]
 }, {
   timestamps: true

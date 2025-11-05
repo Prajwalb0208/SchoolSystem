@@ -7,23 +7,6 @@ import './Leaderboard.css';
 const Leaderboard = ({ difficulty, level }) => {
   const { user, API_URL } = useAuth();
   const [leaderboard, setLeaderboard] = useState(null);
-  const [socket, setSocket] = useState(null);
-
-  useEffect(() => {
-    fetchLeaderboard();
-
-    const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'https://schoolsystem-lyl7.onrender.com');
-    newSocket.on('leaderboard-update', (data) => {
-      if (data.difficulty === difficulty && data.level === parseInt(level)) {
-        setLeaderboard(data);
-      }
-    });
-    setSocket(newSocket);
-
-    return () => {
-      newSocket.disconnect();
-    };
-  }, [difficulty, level]);
 
   const fetchLeaderboard = async () => {
     try {
@@ -39,6 +22,22 @@ const Leaderboard = ({ difficulty, level }) => {
       console.error('Error fetching leaderboard:', error);
     }
   };
+
+  useEffect(() => {
+    fetchLeaderboard();
+
+    const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'https://schoolsystem-lyl7.onrender.com');
+    newSocket.on('leaderboard-update', (data) => {
+      if (data.difficulty === difficulty && data.level === parseInt(level)) {
+        setLeaderboard(data);
+      }
+    });
+
+    return () => {
+      newSocket.disconnect();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [difficulty, level]);
 
   if (!leaderboard) {
     return <div className="leaderboard-container">Loading leaderboard...</div>;

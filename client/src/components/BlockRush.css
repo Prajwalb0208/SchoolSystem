@@ -1,0 +1,129 @@
+.block-rush-game {
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.game-board-container {
+  position: relative;
+}
+
+.game-board {
+  display: inline-block;
+  background: rgba(26, 26, 46, 0.9);
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.board-row {
+  display: flex;
+}
+
+.board-cell {
+  width: 25px;
+  height: 25px;
+  transition: background-color 0.1s ease;
+}
+
+@media (min-width: 768px) {
+  .board-cell {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+.game-over-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 40px;
+  border-radius: 15px;
+  text-align: center;
+  z-index: 10;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.game-over-overlay h2 {
+  margin: 0 0 20px 0;
+  font-size: 2.5em;
+  color: #FF6B6B;
+}
+
+.game-over-overlay p {
+  margin: 10px 0;
+  font-size: 1.2em;
+}
+
+.game-controls {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  min-width: 250px;
+}
+
+.controls-info h3 {
+  margin: 0 0 20px 0;
+  color: white;
+  font-size: 1.5em;
+}
+
+.control-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1em;
+}
+
+kbd {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 5px;
+  padding: 5px 10px;
+  font-family: monospace;
+  font-size: 0.9em;
+  font-weight: bold;
+  min-width: 30px;
+  text-align: center;
+  display: inline-block;
+}
+
+.game-instructions {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.game-instructions p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9em;
+  margin: 8px 0;
+}
+
+@media (max-width: 768px) {
+  .block-rush-game {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .board-cell {
+    width: 20px;
+    height: 20px;
+  }
+
+  .game-controls {
+    width: 100%;
+    max-width: 400px;
+  }
+}
+

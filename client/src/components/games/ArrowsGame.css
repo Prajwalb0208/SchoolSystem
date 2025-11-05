@@ -1,0 +1,115 @@
+.arrows-game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  padding: 40px;
+  position: relative;
+}
+
+.arrows-display {
+  width: 300px;
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 50%;
+  border: 5px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.arrow-display {
+  font-size: 8em;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+.arrows-stats {
+  display: flex;
+  gap: 30px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 20px 40px;
+  border-radius: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat-display {
+  color: white;
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+.game-over-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.95);
+  color: white;
+  padding: 50px;
+  border-radius: 20px;
+  text-align: center;
+  z-index: 10;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.game-over-buttons {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+  justify-content: center;
+}
+
+.retry-btn, .checkpoint-btn {
+  padding: 12px 24px;
+  font-size: 1.1em;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.retry-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.checkpoint-btn {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.checkpoint-controls {
+  margin-top: 20px;
+}
+
+.save-checkpoint-btn {
+  padding: 12px 24px;
+  font-size: 1em;
+  font-weight: bold;
+  background: rgba(16, 185, 129, 0.2);
+  border: 2px solid rgba(16, 185, 129, 0.5);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.save-checkpoint-btn:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.3);
+  transform: translateY(-2px);
+}
+
+.save-checkpoint-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+

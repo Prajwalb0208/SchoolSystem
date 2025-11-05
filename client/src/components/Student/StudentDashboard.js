@@ -9,7 +9,7 @@ import Settings from './Settings';
 import './StudentDashboard.css';
 
 const StudentDashboard = () => {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
 

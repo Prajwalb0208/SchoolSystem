@@ -1,192 +1,282 @@
 const express = require('express');
 const Question = require('../models/Question');
 const GameSession = require('../models/GameSession');
+const QuizSession = require('../models/QuizSession');
 const Leaderboard = require('../models/Leaderboard');
 const Student = require('../models/Student');
+const Checkpoint = require('../models/Checkpoint');
 const { auth, studentAuth } = require('../middleware/auth');
 const router = express.Router();
 
-// Get question for a specific level and difficulty
-router.get('/question/:difficulty/:level', auth, studentAuth, async (req, res) => {
+// Get quiz (5 questions) - coding questions only, no repeats, random order
+router.get('/quiz/:gameType', auth, async (req, res) => {
   try {
-    const { difficulty, level } = req.params;
-    const { language } = req.query; // For hard level language selection
+    const { gameType } = req.params;
+    const { usn } = req.query;
+    const studentId = req.userId;
 
-    // Check if student can access this level
-    const student = await Student.findById(req.userId);
+    // Get student to check answered questions
+    let student = await Student.findById(studentId);
+    
+    // If no student found but USN provided, try to find by USN
+    if (!student && usn) {
+      student = await Student.findOne({ usn: usn.toUpperCase() });
+      if (!student) {
+        // Create or update student record with USN
+        student = await Student.findOneAndUpdate(
+          { usn: usn.toUpperCase() },
+          { 
+            usn: usn.toUpperCase(),
+            username: usn.toUpperCase(),
+            email: `${usn.toLowerCase()}@student.com`,
+            password: 'temp', // Will be updated later
+            name: usn.toUpperCase(),
+            phone: '0000000000',
+            dob: new Date()
+          },
+          { upsert: true, new: true }
+        );
+      }
+    }
+
     if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res.status(404).json({ message: 'Student not found. Please provide USN.' });
     }
 
-    const levelNum = parseInt(level);
-    
-    // Allow level 1 always, otherwise check prerequisites
-    if (levelNum === 1) {
-      // Always allow first level of each difficulty
-      if (difficulty === 'intermediate' && student.easyLevelCompleted < 50) {
-        return res.status(403).json({ message: 'Complete all easy levels first' });
-      }
-      if (difficulty === 'hard' && student.intermediateLevelCompleted < 100) {
-        return res.status(403).json({ message: 'Complete all intermediate levels first' });
-      }
-    } else {
-      // For levels > 1, check if previous level is completed
-      if (difficulty === 'easy' && student.easyLevelCompleted < levelNum - 1) {
-        return res.status(403).json({ message: `Complete level ${levelNum - 1} first` });
-      }
-      if (difficulty === 'intermediate') {
-        if (student.easyLevelCompleted < 50) {
-          return res.status(403).json({ message: 'Complete all easy levels first' });
-        }
-        if (student.intermediateLevelCompleted < levelNum - 1) {
-          return res.status(403).json({ message: `Complete level ${levelNum - 1} first` });
-        }
-      }
-      if (difficulty === 'hard') {
-        if (student.intermediateLevelCompleted < 100) {
-          return res.status(403).json({ message: 'Complete all intermediate levels first' });
-        }
-        if (student.hardLevelCompleted < levelNum - 1) {
-          return res.status(403).json({ message: `Complete level ${levelNum - 1} first` });
-        }
-      }
-    }
-    let question;
-    
-    // For hard level, filter by language if provided
-    if (difficulty === 'hard' && language) {
-      question = await Question.findOne({ 
-        difficulty, 
-        level: levelNum, 
-        language: language 
-      });
-    } else {
-      question = await Question.findOne({ difficulty, level: levelNum });
-    }
-    
-    if (!question) {
-      // Log for debugging
-      const count = await Question.countDocuments({ difficulty, level: levelNum });
-      const allQuestions = await Question.find({ difficulty }).select('level').limit(5);
-      console.log(`Question not found. Difficulty: ${difficulty}, Level: ${levelNum}, Language: ${language || 'N/A'}, Count: ${count}`);
-      console.log(`Available levels for ${difficulty}:`, allQuestions.map(q => q.level));
+    // Fetch easy coding questions (MCQ type)
+    let allQuestions = await Question.find({ 
+      difficulty: 'easy',
+      questionType: 'mcq'
+    });
+
+    // Filter out already answered questions
+    const answeredQuestionIds = student.answeredQuestions || [];
+    const availableQuestions = allQuestions.filter(
+      q => !answeredQuestionIds.some(id => id.toString() === q._id.toString())
+    );
+
+    // If not enough new questions, use all questions but shuffle
+    const questionsToUse = availableQuestions.length >= 5 
+      ? availableQuestions 
+      : allQuestions;
+
+    // Shuffle and take 5
+    const shuffled = questionsToUse.sort(() => Math.random() - 0.5);
+    const selectedQuestions = shuffled.slice(0, 5);
+
+    if (selectedQuestions.length < 5) {
       return res.status(404).json({ 
-        message: `Question not found for ${difficulty} level ${levelNum}${language ? ` in ${language}` : ''}. Please seed the database.`,
-        availableLevels: allQuestions.map(q => q.level)
+        message: `Not enough questions available. Found ${selectedQuestions.length} questions.`,
+        found: selectedQuestions.length
       });
     }
 
-    // Randomize visual theme (1-5)
-    const visualTheme = Math.floor(Math.random() * 5) + 1;
-
-    // Format question based on type
-    let questionData = {
+    // Format questions
+    const quizData = selectedQuestions.map(question => ({
       _id: question._id,
       difficulty: question.difficulty,
-      level: question.level,
       questionType: question.questionType,
-      visualTheme,
+      question: question.question,
+      options: question.options,
+      explanation: question.explanation,
       timeLimit: question.timeLimit || 300
-    };
+    }));
 
-    if (question.questionType === 'mcq') {
-      questionData.question = question.question;
-      questionData.options = question.options;
-      questionData.explanation = question.explanation;
-    } else if (question.questionType === 'codeBlocks') {
-      // Shuffle code blocks for the student
-      const shuffledBlocks = [...question.codeBlocks].sort(() => Math.random() - 0.5);
-      questionData.codeDescription = question.codeDescription;
-      questionData.codeBlocks = shuffledBlocks.map((block, index) => ({
-        id: block.order || index, // Use order as unique identifier
-        order: block.order, // Keep original order for validation
-        lines: block.lines
-      }));
-    } else if (question.questionType === 'codeWrite') {
-      questionData.language = question.language;
-      questionData.problemStatement = question.problemStatement;
-      questionData.testCases = question.testCases;
-      questionData.hints = question.hints;
-    }
-
-    res.json(questionData);
+    res.json({
+      questions: quizData,
+      gameType,
+      totalQuestions: 5,
+      passingScore: 3
+    });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-// Submit answer
-router.post('/submit-answer', auth, studentAuth, async (req, res) => {
+// Submit quiz (all 5 answers at once) - track game progress
+router.post('/submit-quiz', auth, async (req, res) => {
   try {
-    const { questionId, answer, timeTaken, visualTheme } = req.body;
+    const { gameType, answers, totalTimeTaken, gameScore, usn } = req.body;
     
-    const question = await Question.findById(questionId);
-    if (!question) {
-      return res.status(404).json({ message: 'Question not found' });
+    if (!answers || !Array.isArray(answers) || answers.length !== 5) {
+      return res.status(400).json({ message: 'Please provide answers for all 5 questions' });
     }
 
-    const student = await Student.findById(req.userId);
-    let isCorrect = false;
-    let score = 0;
-
-    // Check answer based on question type
-    if (question.questionType === 'mcq') {
-      isCorrect = answer === question.correctAnswer;
-    } else if (question.questionType === 'codeBlocks') {
-      // Check if blocks are in correct order
-      // Sort blocks by order and check if submitted order matches
-      const correctOrder = question.codeBlocks
-        .slice()
-        .sort((a, b) => a.order - b.order)
-        .map(b => b.order.toString())
-        .join(',');
-      isCorrect = answer === correctOrder;
-    } else if (question.questionType === 'codeWrite') {
-      // For code write, we'll do basic validation (in production, use code execution)
-      // For now, we'll check if code contains essential keywords
-      isCorrect = answer && answer.length > 50; // Basic check, should be enhanced
-    }
-
-    // Calculate score based on time and correctness
-    if (isCorrect) {
-      const maxTime = question.timeLimit || 300;
-      const timeBonus = Math.max(0, (maxTime - timeTaken) / maxTime * 100);
-      score = 100 + timeBonus;
-    }
-
-    // Save game session
-    const gameSession = new GameSession({
-      studentId: req.userId,
-      difficulty: question.difficulty,
-      level: question.level,
-      questionId: question._id,
-      answer,
-      isCorrect,
-      timeTaken,
-      score,
-      visualTheme: visualTheme || 1,
-      endTime: new Date()
-    });
-    await gameSession.save();
-
-    // Update student progress if correct
-    if (isCorrect) {
-      if (question.difficulty === 'easy' && question.level === student.easyLevelCompleted + 1) {
-        student.easyLevelCompleted = question.level;
-      } else if (question.difficulty === 'intermediate' && question.level === student.intermediateLevelCompleted + 1) {
-        student.intermediateLevelCompleted = question.level;
-      } else if (question.difficulty === 'hard' && question.level === student.hardLevelCompleted + 1) {
-        student.hardLevelCompleted = question.level;
-        student.wins += 1;
+    let student = await Student.findById(req.userId);
+    
+    // If no student found but USN provided, find or create by USN
+    if (!student && usn) {
+      student = await Student.findOne({ usn: usn.toUpperCase() });
+      if (!student) {
+        student = await Student.findOneAndUpdate(
+          { usn: usn.toUpperCase() },
+          { 
+            usn: usn.toUpperCase(),
+            username: usn.toUpperCase(),
+            email: `${usn.toLowerCase()}@student.com`,
+            password: 'temp',
+            name: usn.toUpperCase(),
+            phone: '0000000000',
+            dob: new Date()
+          },
+          { upsert: true, new: true }
+        );
       }
-      await student.save();
     }
+
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    const questionIds = answers.map(a => a.questionId);
+    const questions = await Question.find({ _id: { $in: questionIds } });
+
+    if (questions.length !== 5) {
+      return res.status(404).json({ message: 'Some questions not found' });
+    }
+
+    // Check each answer
+    const quizAnswers = [];
+    let correctCount = 0;
+    let totalScore = 0;
+
+    for (let i = 0; i < answers.length; i++) {
+      const answerData = answers[i];
+      const question = questions.find(q => q._id.toString() === answerData.questionId);
+      
+      if (!question) continue;
+
+      let isCorrect = false;
+      let score = 0;
+
+      // Check answer based on question type
+      if (question.questionType === 'mcq') {
+        isCorrect = answerData.answer === question.correctAnswer;
+      } else if (question.questionType === 'codeBlocks') {
+        const correctOrder = question.codeBlocks
+          .slice()
+          .sort((a, b) => a.order - b.order)
+          .map(b => b.order.toString())
+          .join(',');
+        isCorrect = answerData.answer === correctOrder;
+      } else if (question.questionType === 'codeWrite') {
+        isCorrect = answerData.answer && answerData.answer.length > 50;
+      }
+
+      if (isCorrect) {
+        correctCount++;
+        const maxTime = question.timeLimit || 300;
+        const timeBonus = Math.max(0, (maxTime - answerData.timeTaken) / maxTime * 100);
+        score = 100 + timeBonus;
+        totalScore += score;
+      }
+
+      quizAnswers.push({
+        questionId: question._id,
+        answer: answerData.answer,
+        isCorrect,
+        timeTaken: answerData.timeTaken
+      });
+
+      // Save individual game session for tracking
+      const gameSession = new GameSession({
+        studentId: req.userId,
+        difficulty: question.difficulty || 'easy',
+        level: question.level || 1,
+        questionId: question._id,
+        answer: answerData.answer,
+        isCorrect,
+        timeTaken: answerData.timeTaken,
+        score,
+        endTime: new Date()
+      });
+      await gameSession.save();
+    }
+
+    // Check if passed (at least 3 correct out of 5)
+    const passed = correctCount >= 3;
+
+    // Save quiz session
+    const quizSession = new QuizSession({
+      studentId: req.userId,
+      difficulty: 'easy',
+      level: 1,
+      questionIds,
+      answers: quizAnswers,
+      endTime: new Date(),
+      totalTimeTaken,
+      correctAnswers: correctCount,
+      totalQuestions: 5,
+      passed,
+      score: totalScore
+    });
+    await quizSession.save();
+
+    // Track answered questions (prevent repeats)
+    const newAnsweredQuestions = [...new Set([
+      ...(student.answeredQuestions || []).map(id => id.toString()),
+      ...questionIds.map(id => id.toString())
+    ])];
+    student.answeredQuestions = newAnsweredQuestions;
+
+    // Update game-specific progress
+    if (gameType) {
+      let gameProgress = student.gameProgress || [];
+      let gameIndex = gameProgress.findIndex(g => g.gameType === gameType);
+      
+      if (gameIndex === -1) {
+        gameProgress.push({
+          gameType,
+          totalScore: gameScore || 0,
+          gamesPlayed: 1,
+          quizzesPassed: passed ? 1 : 0,
+          lastPlayed: new Date()
+        });
+      } else {
+        gameProgress[gameIndex].totalScore += (gameScore || 0);
+        gameProgress[gameIndex].gamesPlayed += 1;
+        if (passed) {
+          gameProgress[gameIndex].quizzesPassed += 1;
+        }
+        gameProgress[gameIndex].lastPlayed = new Date();
+      }
+      student.gameProgress = gameProgress;
+    }
+
+    // Update student progress if passed
+    if (passed) {
+      // Update streak
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const lastPlayed = student.lastPlayedDate ? new Date(student.lastPlayedDate) : null;
+      const lastPlayedDate = lastPlayed ? new Date(lastPlayed.setHours(0, 0, 0, 0)) : null;
+
+      if (!lastPlayedDate || lastPlayedDate.getTime() !== today.getTime()) {
+        if (lastPlayedDate && (today - lastPlayedDate) === 86400000) {
+          student.streakLevel += 1;
+        } else {
+          student.streakLevel = 1;
+          student.currentStreakStart = today;
+        }
+        student.lastPlayedDate = today;
+      }
+    }
+    
+    await student.save();
 
     res.json({
-      isCorrect,
-      score,
-      correctAnswer: question.questionType === 'mcq' ? question.correctAnswer : null,
-      explanation: question.explanation
+      passed,
+      correctAnswers: correctCount,
+      totalQuestions: 5,
+      score: totalScore,
+      answers: quizAnswers.map((a, idx) => ({
+        questionId: a.questionId,
+        isCorrect: a.isCorrect,
+        correctAnswer: questions.find(q => q._id.toString() === a.questionId)?.questionType === 'mcq' 
+          ? questions.find(q => q._id.toString() === a.questionId)?.correctAnswer 
+          : null,
+        explanation: questions.find(q => q._id.toString() === a.questionId)?.explanation
+      }))
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -350,6 +440,80 @@ router.post('/check-badge', auth, studentAuth, async (req, res) => {
     }
 
     res.json({ eligible: false });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Save checkpoint
+router.post('/checkpoint/save', auth, async (req, res) => {
+  try {
+    const { gameType, gameState, score, level } = req.body;
+
+    // Deactivate old checkpoint for this game
+    await Checkpoint.updateMany(
+      { studentId: req.userId, gameType, isActive: true },
+      { isActive: false }
+    );
+
+    // Create new checkpoint
+    const checkpoint = new Checkpoint({
+      studentId: req.userId,
+      gameType,
+      gameState,
+      score: score || 0,
+      level: level || 1
+    });
+    await checkpoint.save();
+
+    res.json({ 
+      success: true, 
+      checkpointId: checkpoint._id,
+      message: 'Checkpoint saved successfully' 
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Load checkpoint
+router.get('/checkpoint/:gameType', auth, async (req, res) => {
+  try {
+    const { gameType } = req.params;
+    
+    const checkpoint = await Checkpoint.findOne({
+      studentId: req.userId,
+      gameType,
+      isActive: true
+    }).sort({ timestamp: -1 });
+
+    if (!checkpoint) {
+      return res.status(404).json({ message: 'No checkpoint found' });
+    }
+
+    res.json({
+      checkpointId: checkpoint._id,
+      gameState: checkpoint.gameState,
+      score: checkpoint.score,
+      level: checkpoint.level,
+      timestamp: checkpoint.timestamp
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Delete checkpoint
+router.delete('/checkpoint/:gameType', auth, async (req, res) => {
+  try {
+    const { gameType } = req.params;
+    
+    await Checkpoint.updateMany(
+      { studentId: req.userId, gameType, isActive: true },
+      { isActive: false }
+    );
+
+    res.json({ success: true, message: 'Checkpoint deleted' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

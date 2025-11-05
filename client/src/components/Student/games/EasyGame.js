@@ -12,19 +12,19 @@ const EasyGame = () => {
   const { level } = useParams();
   const navigate = useNavigate();
   const { user, API_URL } = useAuth();
-  const [question, setQuestion] = useState(null);
-  const [selectedAnswer, setSelectedAnswer] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
+  const [quiz, setQuiz] = useState(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState({}); // { questionId: answer }
+  const [questionStartTimes, setQuestionStartTimes] = useState({}); // { questionId: startTime }
+  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes total for quiz
   const [result, setResult] = useState(null);
-  const [visualTheme, setVisualTheme] = useState(1);
   const [socket, setSocket] = useState(null);
-  const [timeTaken, setTimeTaken] = useState(0);
-  const [startTime, setStartTime] = useState(Date.now());
+  const [totalStartTime] = useState(Date.now());
   const lastWarningTimeRef = useRef(0);
 
   useEffect(() => {
     soundEffects.updateSettings();
-    fetchQuestion();
+    fetchQuiz();
     
     // Initialize socket
     const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'https://schoolsystem-lyl7.onrender.com');
@@ -35,7 +35,7 @@ const EasyGame = () => {
     });
     setSocket(newSocket);
 
-    // Timer for 5 minutes
+    // Timer for 5 minutes total quiz time
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -55,49 +55,87 @@ const EasyGame = () => {
       clearInterval(timer);
       newSocket.disconnect();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [level]);
 
-  const fetchQuestion = async () => {
+  const fetchQuiz = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/games/question/easy/${level}`, {
+      const response = await axios.get(`${API_URL}/games/quiz/easy/${level}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      setQuestion(response.data);
-      setVisualTheme(response.data.visualTheme || 1);
+      setQuiz(response.data);
+      // Initialize start times for all questions
+      const startTimes = {};
+      response.data.questions.forEach(q => {
+        startTimes[q._id] = Date.now();
+      });
+      setQuestionStartTimes(startTimes);
       setTimeLeft(300);
-      setStartTime(Date.now());
     } catch (error) {
-      console.error('Error fetching question:', error);
+      console.error('Error fetching quiz:', error);
+      alert(error.response?.data?.message || 'Error loading quiz');
     }
   };
 
   const handleTimeUp = () => {
-    // Trigger question after 5 minutes
-    if (!question) {
-      fetchQuestion();
+    // Auto-submit quiz when time is up
+    if (quiz && Object.keys(answers).length === quiz.questions.length) {
+      handleSubmitQuiz();
     }
   };
 
-  const handleSubmit = async () => {
-    if (selectedAnswer === null) {
+  const handleAnswerChange = (questionId, answer) => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: answer
+    }));
+    soundEffects.playClick();
+  };
+
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < quiz.questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      soundEffects.playClick();
+    }
+  };
+
+  const handlePreviousQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+      soundEffects.playClick();
+    }
+  };
+
+  const handleSubmitQuiz = async () => {
+    if (!quiz) return;
+
+    // Check if all questions are answered
+    const allAnswered = quiz.questions.every(q => answers[q._id] !== undefined && answers[q._id] !== null);
+    if (!allAnswered) {
+      alert('Please answer all 5 questions before submitting.');
       soundEffects.playError();
       return;
     }
 
     soundEffects.playSubmit();
-    const calculatedTimeTaken = Math.floor((Date.now() - startTime) / 1000);
-    setTimeTaken(calculatedTimeTaken);
+    const totalTimeTaken = Math.floor((Date.now() - totalStartTime) / 1000);
 
     try {
       const token = localStorage.getItem('token');
+      const answerArray = quiz.questions.map(q => ({
+        questionId: q._id,
+        answer: answers[q._id],
+        timeTaken: Math.floor((Date.now() - questionStartTimes[q._id]) / 1000)
+      }));
+
       const response = await axios.post(
-        `${API_URL}/games/submit-answer`,
+        `${API_URL}/games/submit-quiz`,
         {
-          questionId: question._id,
-          answer: selectedAnswer,
-          timeTaken: calculatedTimeTaken,
-          visualTheme
+          difficulty: 'easy',
+          level: parseInt(level),
+          answers: answerArray,
+          totalTimeTaken
         },
         {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -106,37 +144,30 @@ const EasyGame = () => {
 
       setResult(response.data);
 
-      if (response.data.isCorrect && socket) {
+      if (response.data.passed && socket) {
         soundEffects.playSuccess();
         socket.emit('submit-answer', {
           difficulty: 'easy',
           level: parseInt(level),
           studentId: user?.id,
           score: response.data.score,
-          timeTaken: calculatedTimeTaken
+          timeTaken: totalTimeTaken
         });
       } else {
         soundEffects.playError();
       }
-
-      // Update streak
-      await axios.post(
-        `${API_URL}/students/update-streak`,
-        { playTime: 1 },
-        {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }
-      );
     } catch (error) {
-      console.error('Error submitting answer:', error);
+      console.error('Error submitting quiz:', error);
       soundEffects.playError();
+      alert('Error submitting quiz. Please try again.');
     }
   };
 
   const handleNext = () => {
     soundEffects.playClick();
     setResult(null);
-    setSelectedAnswer(null);
+    setAnswers({});
+    setCurrentQuestionIndex(0);
     if (parseInt(level) < 50) {
       navigate(`/student/games/easy/${parseInt(level) + 1}`);
     } else {
@@ -144,27 +175,32 @@ const EasyGame = () => {
     }
   };
 
-  const getVisualStyle = () => {
-    const themes = {
-      1: { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', icon: '🎮' },
-      2: { background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', icon: '🚀' },
-      3: { background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', icon: '⭐' },
-      4: { background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', icon: '🔥' },
-      5: { background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', icon: '💎' }
-    };
-    return themes[visualTheme] || themes[1];
+  const handleRetry = () => {
+    soundEffects.playClick();
+    setResult(null);
+    setAnswers({});
+    setCurrentQuestionIndex(0);
+    fetchQuiz();
   };
 
-  const visual = getVisualStyle();
-
-  if (!question) {
+  if (!quiz) {
     return <div className="game-container"><div className="spinner"></div></div>;
   }
 
+  const currentQuestion = quiz.questions[currentQuestionIndex];
+  const progress = ((currentQuestionIndex + 1) / quiz.questions.length) * 100;
+  const allAnswered = quiz.questions.every(q => answers[q._id] !== undefined && answers[q._id] !== null);
+
   return (
-    <div className="game-container" style={{ background: visual.background }}>
-        <div className="game-header">
-        <h2>Easy Level {level} {visual.icon}</h2>
+    <div className="game-container">
+      <div className="game-header">
+        <h2>Easy Level {level} - Quiz</h2>
+        <div className="quiz-progress">
+          Question {currentQuestionIndex + 1} of {quiz.questions.length}
+          <div className="progress-bar">
+            <div className="progress-fill" style={{ width: `${progress}%` }}></div>
+          </div>
+        </div>
         <div className={`timer ${timeLeft < 60 ? 'warning' : ''}`}>
           Time: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
         </div>
@@ -174,18 +210,21 @@ const EasyGame = () => {
         {!result ? (
           <>
             <div className="question-card">
+              <div className="question-header">
+                <span className="question-number">Question {currentQuestionIndex + 1}</span>
+                <span className="question-status">
+                  {answers[currentQuestion._id] !== undefined ? '✓ Answered' : 'Not Answered'}
+                </span>
+              </div>
               <div className="question-text">
-                <pre className="code-snippet">{question.question}</pre>
+                <pre className="code-snippet">{currentQuestion.question}</pre>
               </div>
               <div className="options">
-                {question.options?.map((option, index) => (
+                {currentQuestion.options?.map((option, index) => (
                   <button
                     key={index}
-                    className={`option-btn ${selectedAnswer === index ? 'selected' : ''}`}
-                    onClick={() => {
-                      soundEffects.playClick();
-                      setSelectedAnswer(index);
-                    }}
+                    className={`option-btn ${answers[currentQuestion._id] === index ? 'selected' : ''}`}
+                    onClick={() => handleAnswerChange(currentQuestion._id, index)}
                     onMouseEnter={() => soundEffects.playHover()}
                   >
                     <span className="option-letter">{String.fromCharCode(65 + index)}</span>
@@ -193,26 +232,63 @@ const EasyGame = () => {
                   </button>
                 ))}
               </div>
-              <button
-                onClick={handleSubmit}
-                disabled={selectedAnswer === null}
-                className="btn btn-primary submit-btn"
-              >
-                Submit Answer
-              </button>
+              
+              <div className="quiz-navigation">
+                <button
+                  onClick={handlePreviousQuestion}
+                  disabled={currentQuestionIndex === 0}
+                  className="btn btn-secondary"
+                >
+                  Previous
+                </button>
+                {currentQuestionIndex < quiz.questions.length - 1 ? (
+                  <button
+                    onClick={handleNextQuestion}
+                    className="btn btn-secondary"
+                  >
+                    Next Question
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSubmitQuiz}
+                    disabled={!allAnswered}
+                    className="btn btn-primary submit-btn"
+                  >
+                    Submit Quiz
+                  </button>
+                )}
+              </div>
+
+              <div className="quiz-overview">
+                <h4>Question Status:</h4>
+                <div className="question-indicators">
+                  {quiz.questions.map((q, idx) => (
+                    <button
+                      key={q._id}
+                      className={`question-indicator ${idx === currentQuestionIndex ? 'active' : ''} ${answers[q._id] !== undefined ? 'answered' : ''}`}
+                      onClick={() => setCurrentQuestionIndex(idx)}
+                    >
+                      {idx + 1}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </>
         ) : (
           <LevelCompletion
-            isCorrect={result.isCorrect}
+            isCorrect={result.passed}
             score={result.score}
             level={parseInt(level)}
             difficulty="easy"
             maxLevel={50}
-            explanation={result.explanation}
-            timeTaken={timeTaken}
-            nextLevelPath={parseInt(level) < 50 ? `/student/games/easy/${parseInt(level) + 1}` : null}
-            onClose={handleNext}
+            explanation={`You got ${result.correctAnswers} out of ${result.totalQuestions} questions correct. ${result.passed ? 'Congratulations! You passed!' : 'You need at least 3 correct to pass.'}`}
+            timeTaken={Math.floor((Date.now() - totalStartTime) / 1000)}
+            nextLevelPath={result.passed && parseInt(level) < 50 ? `/student/games/easy/${parseInt(level) + 1}` : null}
+            onClose={result.passed ? handleNext : handleRetry}
+            showRetry={!result.passed}
+            onRetry={handleRetry}
+            answers={result.answers}
           />
         )}
       </div>
@@ -223,4 +299,3 @@ const EasyGame = () => {
 };
 
 export default EasyGame;
-

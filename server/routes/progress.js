@@ -39,6 +39,7 @@ router.get('/student/:usn', auth, teacherAuth, async (req, res) => {
       easyLevelCompleted: student.easyLevelCompleted,
       intermediateLevelCompleted: student.intermediateLevelCompleted,
       hardLevelCompleted: student.hardLevelCompleted,
+      gameProgress: student.gameProgress || [],
       totalSessions,
       correctSessions,
       accuracy: `${accuracy}%`,

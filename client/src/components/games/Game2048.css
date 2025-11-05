@@ -1,0 +1,125 @@
+.game2048-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+}
+
+.game2048-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  background: rgba(187, 173, 160, 0.8);
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.game2048-cell {
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(205, 193, 180, 0.8);
+  border-radius: 8px;
+  font-size: 2em;
+  font-weight: bold;
+  color: #776e65;
+}
+
+.game2048-cell.tile-2 { background: #eee4da; }
+.game2048-cell.tile-4 { background: #ede0c8; }
+.game2048-cell.tile-8 { background: #f2b179; color: #f9f6f2; }
+.game2048-cell.tile-16 { background: #f59563; color: #f9f6f2; }
+.game2048-cell.tile-32 { background: #f67c5f; color: #f9f6f2; }
+.game2048-cell.tile-64 { background: #f65e3b; color: #f9f6f2; }
+.game2048-cell.tile-128 { background: #edcf72; color: #f9f6f2; font-size: 1.5em; }
+.game2048-cell.tile-256 { background: #edcc61; color: #f9f6f2; font-size: 1.5em; }
+.game2048-cell.tile-512 { background: #edc850; color: #f9f6f2; font-size: 1.5em; }
+.game2048-cell.tile-1024 { background: #edc53f; color: #f9f6f2; font-size: 1.2em; }
+.game2048-cell.tile-2048 { background: #edc22e; color: #f9f6f2; font-size: 1.2em; }
+
+.game2048-stats {
+  display: flex;
+  gap: 30px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 15px 30px;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat-display {
+  color: white;
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+.game-over-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.95);
+  color: white;
+  padding: 50px;
+  border-radius: 20px;
+  text-align: center;
+  z-index: 10;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.game-over-buttons {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+  justify-content: center;
+}
+
+.retry-btn, .checkpoint-btn {
+  padding: 12px 24px;
+  font-size: 1.1em;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.retry-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.checkpoint-btn {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.checkpoint-controls {
+  margin-top: 10px;
+}
+
+.save-checkpoint-btn {
+  padding: 12px 24px;
+  font-size: 1em;
+  font-weight: bold;
+  background: rgba(16, 185, 129, 0.2);
+  border: 2px solid rgba(16, 185, 129, 0.5);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.save-checkpoint-btn:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.3);
+  transform: translateY(-2px);
+}
+
+.save-checkpoint-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+

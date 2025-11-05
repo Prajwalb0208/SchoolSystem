@@ -22,6 +22,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     console.log('API_URL:', API_URL);
     console.log('REACT_APP_API_URL env:', process.env.REACT_APP_API_URL);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

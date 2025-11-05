@@ -1,0 +1,89 @@
+.pieces-game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+}
+
+.puzzle-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  max-width: 450px;
+  width: 100%;
+}
+
+.puzzle-piece {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3em;
+  font-weight: bold;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+}
+
+.puzzle-piece:hover {
+  transform: scale(1.05);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.puzzle-piece.selected {
+  background: rgba(102, 126, 234, 0.4);
+  border-color: rgba(102, 126, 234, 0.8);
+}
+
+.puzzle-piece.correct {
+  background: rgba(16, 185, 129, 0.4);
+  border-color: rgba(16, 185, 129, 0.8);
+}
+
+.pieces-stats {
+  display: flex;
+  gap: 30px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 20px 40px;
+  border-radius: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat-display {
+  color: white;
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+.checkpoint-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.save-checkpoint-btn, .retry-btn {
+  padding: 12px 24px;
+  font-size: 1em;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.save-checkpoint-btn {
+  background: rgba(16, 185, 129, 0.2);
+  border: 2px solid rgba(16, 185, 129, 0.5);
+  color: white;
+}
+
+.retry-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+

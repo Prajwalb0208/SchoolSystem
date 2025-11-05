@@ -1,19 +1,15 @@
 import React, { useState } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import Profile from './Profile';
-import Assignments from './Assignments';
 import ProgressTracking from './ProgressTracking';
 import './TeacherDashboard.css';
 
 const TeacherDashboard = () => {
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
 
   const handleLogout = () => {
-    logout();
-    navigate('/login');
+    navigate('/');
   };
 
   return (
@@ -29,13 +25,6 @@ const TeacherDashboard = () => {
             onClick={() => setActiveTab('dashboard')}
           >
             Dashboard
-          </Link>
-          <Link 
-            to="/teacher/assignments" 
-            className={activeTab === 'assignments' ? 'active' : ''}
-            onClick={() => setActiveTab('assignments')}
-          >
-            Assignments
           </Link>
           <Link 
             to="/teacher/progress" 
@@ -58,7 +47,6 @@ const TeacherDashboard = () => {
       <div className="dashboard-content">
         <Routes>
           <Route path="/dashboard" element={<DashboardHome />} />
-          <Route path="/assignments/*" element={<Assignments />} />
           <Route path="/progress" element={<ProgressTracking />} />
           <Route path="/profile" element={<Profile />} />
         </Routes>
@@ -68,22 +56,22 @@ const TeacherDashboard = () => {
 };
 
 const DashboardHome = () => {
-  const { user } = useAuth();
-
   return (
     <div className="dashboard-home">
-      <h1>Welcome, {user?.username}!</h1>
+      <h1>Welcome, Teacher!</h1>
       <div className="teacher-stats">
         <div className="stat-card">
-          <h3>Quick Actions</h3>
+          <h3>Monitor Student Progress</h3>
+          <p>View how students are performing in their coding quizzes and track their progress through different difficulty levels.</p>
           <div className="quick-actions">
-            <Link to="/teacher/assignments" className="action-btn">
-              Create Assignment
-            </Link>
             <Link to="/teacher/progress" className="action-btn">
               View Student Progress
             </Link>
           </div>
+        </div>
+        <div className="stat-card">
+          <h3>📊 Overview</h3>
+          <p>Students play a game for 5 minutes. After 5 minutes, a quiz appears with 5 questions. They need at least 3 correct answers to continue playing.</p>
         </div>
       </div>
     </div>

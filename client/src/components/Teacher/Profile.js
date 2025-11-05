@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import './Profile.css';
 
 const Profile = () => {
-  const { user, API_URL } = useAuth();
+  const { API_URL } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -12,6 +12,7 @@ const Profile = () => {
 
   useEffect(() => {
     fetchProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchProfile = async () => {

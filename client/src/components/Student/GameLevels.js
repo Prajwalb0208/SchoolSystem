@@ -20,9 +20,6 @@ const GameLevels = () => {
 };
 
 const GameLevelsHome = () => {
-  const [selectedDifficulty, setSelectedDifficulty] = useState(null);
-  const [selectedLevel, setSelectedLevel] = useState(1);
-
   const difficulties = [
     {
       name: 'Easy',
@@ -45,11 +42,6 @@ const GameLevelsHome = () => {
       locked: false // Should check if intermediate levels completed
     }
   ];
-
-  const handleLevelSelect = (difficulty, level) => {
-    setSelectedDifficulty(difficulty);
-    setSelectedLevel(level);
-  };
 
   return (
     <div className="game-levels-home">

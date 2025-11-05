@@ -54,6 +54,7 @@ const IntermediateGame = () => {
       clearInterval(timer);
       newSocket.disconnect();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [level]);
 
   const fetchQuestion = async () => {

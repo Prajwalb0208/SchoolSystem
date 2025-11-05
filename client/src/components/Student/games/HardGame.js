@@ -44,6 +44,7 @@ const HardGame = () => {
     return () => {
       newSocket.disconnect();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [level]);
 
   const spinWheel = () => {

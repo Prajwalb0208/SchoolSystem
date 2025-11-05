@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
 import soundEffects from '../../utils/soundEffects';
 import './Settings.css';
 
 const Settings = () => {
-  const { user } = useAuth();
   const [settings, setSettings] = useState({
     soundEnabled: true,
     soundVolume: 100,

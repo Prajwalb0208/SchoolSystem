@@ -1,0 +1,208 @@
+.block-rush-game {
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.game-board-container {
+  position: relative;
+}
+
+.game-board {
+  display: inline-block;
+  background: rgba(26, 26, 46, 0.9);
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.board-row {
+  display: flex;
+}
+
+.board-cell {
+  width: 25px;
+  height: 25px;
+  transition: background-color 0.1s ease;
+}
+
+@media (min-width: 768px) {
+  .board-cell {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+.game-over-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 40px;
+  border-radius: 15px;
+  text-align: center;
+  z-index: 10;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.game-over-overlay h2 {
+  margin: 0 0 20px 0;
+  font-size: 2.5em;
+  color: #FF6B6B;
+}
+
+.game-over-overlay p {
+  margin: 10px 0;
+  font-size: 1.2em;
+}
+
+.game-over-buttons {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+  justify-content: center;
+}
+
+.retry-btn,
+.checkpoint-btn {
+  padding: 12px 24px;
+  font-size: 1.1em;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.retry-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.retry-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.checkpoint-btn {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.checkpoint-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+}
+
+.game-controls {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  min-width: 250px;
+}
+
+.controls-info h3 {
+  margin: 0 0 20px 0;
+  color: white;
+  font-size: 1.5em;
+}
+
+.control-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1em;
+}
+
+kbd {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 5px;
+  padding: 5px 10px;
+  font-family: monospace;
+  font-size: 0.9em;
+  font-weight: bold;
+  min-width: 30px;
+  text-align: center;
+  display: inline-block;
+}
+
+.game-instructions {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.game-instructions p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9em;
+  margin: 8px 0;
+}
+
+.game-stats-display {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat-display {
+  color: white;
+  font-size: 1.1em;
+  margin: 8px 0;
+  font-weight: bold;
+}
+
+.checkpoint-controls {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.save-checkpoint-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 1em;
+  font-weight: bold;
+  background: rgba(16, 185, 129, 0.2);
+  border: 2px solid rgba(16, 185, 129, 0.5);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.save-checkpoint-btn:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.3);
+  transform: translateY(-2px);
+}
+
+.save-checkpoint-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .block-rush-game {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .board-cell {
+    width: 20px;
+    height: 20px;
+  }
+
+  .game-controls {
+    width: 100%;
+    max-width: 400px;
+  }
+}

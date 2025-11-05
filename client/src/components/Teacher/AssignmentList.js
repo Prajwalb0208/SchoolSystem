@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import io from 'socket.io-client';
 
 const AssignmentList = () => {
-  const { API_URL, user } = useAuth();
+  const { API_URL } = useAuth();
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -19,6 +19,7 @@ const AssignmentList = () => {
     });
 
     return () => socket.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchAssignments = async () => {
@@ -48,11 +49,6 @@ const AssignmentList = () => {
       console.error('Error deleting assignment:', error);
       alert('Error deleting assignment');
     }
-  };
-
-  const notifyStudents = (assignmentId, title) => {
-    const socket = io(process.env.REACT_APP_SOCKET_URL || 'https://schoolsystem-lyl7.onrender.com');
-    socket.emit('assignment-created', { assignmentId, title });
   };
 
   if (loading) return <div className="spinner"></div>;

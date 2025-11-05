@@ -1,0 +1,56 @@
+.game-controls-bar {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  align-items: center;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.control-btn {
+  padding: 10px 20px;
+  font-size: 1em;
+  font-weight: bold;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.control-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.pause-btn:hover {
+  background: rgba(255, 193, 7, 0.3);
+  border-color: rgba(255, 193, 7, 0.6);
+}
+
+.restart-btn:hover {
+  background: rgba(33, 150, 243, 0.3);
+  border-color: rgba(33, 150, 243, 0.6);
+}
+
+.quit-btn:hover {
+  background: rgba(244, 67, 54, 0.3);
+  border-color: rgba(244, 67, 54, 0.6);
+}
+
+@media (max-width: 768px) {
+  .game-controls-bar {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .control-btn {
+    padding: 8px 15px;
+    font-size: 0.9em;
+  }
+}
+
