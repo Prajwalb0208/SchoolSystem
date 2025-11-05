@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import './SudokuGame.css';
 import '../Game.css';
@@ -12,6 +12,9 @@ const SudokuGame = ({ gameRunning, onScoreChange, isPaused, level = 1 }) => {
   const [selectedCell, setSelectedCell] = useState(null);
   const [score, setScore] = useState(0);
   const [completed, setCompleted] = useState(false);
+  const [invalidCells, setInvalidCells] = useState(new Set()); // Track cells with invalid values
+  const initializedRef = useRef(false); // Track if game has been initialized
+  const currentLevelRef = useRef(level); // Track current level to detect level changes
 
   // Helper function for validation (used in generation)
   const isValidPlacementHelper = useCallback((grid, row, col, num) => {
@@ -91,6 +94,7 @@ const SudokuGame = ({ gameRunning, onScoreChange, isPaused, level = 1 }) => {
     setInitialGrid(newGrid.map(row => [...row]));
     setSelectedCell(null);
     setCompleted(false);
+    setInvalidCells(new Set());
   }, [level, isValidPlacementHelper]);
 
   const saveCheckpoint = async () => {
@@ -114,32 +118,58 @@ const SudokuGame = ({ gameRunning, onScoreChange, isPaused, level = 1 }) => {
         `${API_URL}/games/checkpoint/${GAME_TYPE}`,
         { headers: token ? { 'Authorization': `Bearer ${token}` } : {} }
       );
-      const { gameState, score: savedScore } = response.data;
-      setGrid(gameState.grid || Array(9).fill(null).map(() => Array(9).fill(0)));
-      setInitialGrid(gameState.initialGrid || Array(9).fill(null).map(() => Array(9).fill(0)));
-      setSelectedCell(gameState.selectedCell || null);
-      setScore(savedScore || 0);
-      setCompleted(false);
-      onScoreChange(savedScore || 0);
-      return true;
+      const { gameState, score: savedScore, level: savedLevel } = response.data;
+      // Only load if saved level matches current level
+      if (savedLevel && savedLevel === level && gameState && gameState.grid) {
+        setGrid(gameState.grid || Array(9).fill(null).map(() => Array(9).fill(0)));
+        setInitialGrid(gameState.initialGrid || Array(9).fill(null).map(() => Array(9).fill(0)));
+        setSelectedCell(gameState.selectedCell || null);
+        setScore(savedScore || 0);
+        setCompleted(false);
+        setInvalidCells(new Set());
+        onScoreChange(savedScore || 0);
+        initializedRef.current = true;
+        return true;
+      }
+      return false;
     } catch (error) {
       return false;
     }
   };
 
   const handleRetry = () => {
+    initializedRef.current = false;
     generateSudoku();
     setScore(0);
+    setInvalidCells(new Set());
     onScoreChange(0);
   };
 
   useEffect(() => {
-    if (gameRunning && !isPaused) {
-      loadCheckpoint().then(loaded => {
-        if (!loaded) generateSudoku();
-      });
+    // Only initialize when game is running and not paused
+    if (!gameRunning || isPaused) {
+      return;
     }
-  }, [gameRunning, generateSudoku, isPaused, level]);
+    
+    // If already initialized for this exact level, don't reinitialize
+    if (initializedRef.current && currentLevelRef.current === level) {
+      return;
+    }
+    
+    // Mark as initialized and set current level
+    initializedRef.current = true;
+    currentLevelRef.current = level;
+    
+    // Try to load checkpoint first, then generate if no checkpoint
+    const initGame = async () => {
+      const loaded = await loadCheckpoint();
+      if (!loaded) {
+        generateSudoku();
+      }
+    };
+    initGame();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameRunning, isPaused, level]); // Include level to detect level changes
 
   const handleCellClick = (row, col) => {
     if (!gameRunning || isPaused || completed) return;
@@ -191,6 +221,11 @@ const SudokuGame = ({ gameRunning, onScoreChange, isPaused, level = 1 }) => {
     
     const newGrid = grid.map(r => [...r]);
     const prevValue = newGrid[row][col];
+    const newInvalidCells = new Set(invalidCells);
+    
+    // Remove this cell from invalid cells list
+    const cellId = `${row}-${col}`;
+    newInvalidCells.delete(cellId);
     
     // If same number, clear it (set to 0)
     if (prevValue === num) {
@@ -200,16 +235,17 @@ const SudokuGame = ({ gameRunning, onScoreChange, isPaused, level = 1 }) => {
       if (isValidPlacement(newGrid, row, col, num)) {
         newGrid[row][col] = num;
       } else {
-        // Invalid placement - show error but don't place
-        alert('Invalid placement! This number conflicts with Sudoku rules.');
-        return;
+        // Invalid placement - mark cell as invalid and place number anyway
+        newGrid[row][col] = num;
+        newInvalidCells.add(cellId);
       }
     }
     
     setGrid(newGrid);
+    setInvalidCells(newInvalidCells);
     
     // Update score only on valid placement
-    if (newGrid[row][col] !== 0 && newGrid[row][col] !== prevValue) {
+    if (newGrid[row][col] !== 0 && newGrid[row][col] !== prevValue && !newInvalidCells.has(cellId)) {
       setScore(prev => {
         const newScore = prev + 5 * level;
         onScoreChange(newScore);
@@ -217,8 +253,8 @@ const SudokuGame = ({ gameRunning, onScoreChange, isPaused, level = 1 }) => {
       });
     }
     
-    // Check if puzzle is complete
-    if (checkCompletion(newGrid)) {
+    // Check if puzzle is complete (only if no invalid cells)
+    if (newInvalidCells.size === 0 && checkCompletion(newGrid)) {
       setCompleted(true);
       setScore(prev => {
         const finalScore = prev + 100 * level;
@@ -226,7 +262,33 @@ const SudokuGame = ({ gameRunning, onScoreChange, isPaused, level = 1 }) => {
         return finalScore;
       });
     }
-  }, [selectedCell, gameRunning, isPaused, completed, grid, initialGrid, isValidPlacement, checkCompletion, level, onScoreChange]);
+  }, [selectedCell, gameRunning, isPaused, completed, grid, initialGrid, isValidPlacement, checkCompletion, level, onScoreChange, invalidCells]);
+
+  // Revalidate all cells whenever grid changes (but don't regenerate puzzle)
+  useEffect(() => {
+    // Only revalidate if game is already initialized (avoid during initialization)
+    if (!initializedRef.current || !gameRunning) return;
+    
+    const newInvalidCells = new Set();
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        if (grid[r][c] !== 0 && initialGrid[r][c] === 0) {
+          // Only check user-placed cells (not initial cells)
+          if (!isValidPlacement(grid, r, c, grid[r][c])) {
+            newInvalidCells.add(`${r}-${c}`);
+          }
+        }
+      }
+    }
+    // Use functional update to avoid dependency issues
+    setInvalidCells(prev => {
+      const prevStr = Array.from(prev).sort().join(',');
+      const newStr = Array.from(newInvalidCells).sort().join(',');
+      // Only update if there are actual changes to avoid infinite loops
+      return prevStr !== newStr ? newInvalidCells : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grid, initialGrid, isValidPlacement, gameRunning]);
 
   useEffect(() => {
     if (!gameRunning || isPaused || completed) return;
@@ -248,13 +310,14 @@ const SudokuGame = ({ gameRunning, onScoreChange, isPaused, level = 1 }) => {
           row.map((cell, c) => {
             const isInitial = initialGrid[r][c] !== 0;
             const isSelected = selectedCell?.row === r && selectedCell?.col === c;
+            const isInvalid = invalidCells.has(`${r}-${c}`);
             const boxRow = Math.floor(r / 3);
             const boxCol = Math.floor(c / 3);
             
             return (
               <div
                 key={`${r}-${c}`}
-                className={`sudoku-cell ${isSelected ? 'selected' : ''} ${isInitial ? 'initial' : ''} ${boxRow % 2 === boxCol % 2 ? 'dark-box' : ''}`}
+                className={`sudoku-cell ${isSelected ? 'selected' : ''} ${isInitial ? 'initial' : ''} ${isInvalid ? 'invalid' : ''} ${boxRow % 2 === boxCol % 2 ? 'dark-box' : ''}`}
                 onClick={() => handleCellClick(r, c)}
               >
                 {cell || ''}

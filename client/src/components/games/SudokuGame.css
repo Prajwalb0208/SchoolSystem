@@ -43,8 +43,17 @@
   cursor: default;
 }
 
-.sudoku-cell.dark-box {
-  background: rgba(255, 255, 255, 0.15);
+.sudoku-cell.invalid {
+  background: rgba(239, 68, 68, 0.6) !important;
+  color: white;
+  border: 2px solid rgba(239, 68, 68, 0.9) !important;
+  animation: shake 0.3s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
 }
 
 .sudoku-controls {
