@@ -1,183 +1,113 @@
-# Teacher Flowchart
+# Teacher Flowchart - Simple Guide
 
-## Teacher Main Flowchart
+## What is a Flowchart?
+A flowchart shows step-by-step what happens when a teacher uses the system. Think of it like a map showing the path from start to finish.
 
-```mermaid
-flowchart TD
-    Start([Start]) --> LandingPage[Landing Page]
-    LandingPage --> RoleSelect{Select Role}
-    RoleSelect -->|Teacher| TeacherAuth[Teacher Authentication]
-    
-    TeacherAuth --> AuthChoice{Login or Signup?}
-    AuthChoice -->|Signup| Signup[Teacher Signup<br/>- Username<br/>- Email<br/>- Password<br/>- Phone<br/>- Profile Picture]
-    AuthChoice -->|Login| Login[Teacher Login<br/>- Username<br/>- Password]
-    
-    Signup --> ValidateSignup{Validation<br/>Success?}
-    ValidateSignup -->|No| SignupError[Show Error] --> Signup
-    ValidateSignup -->|Yes| CreateAccount[Create Account<br/>Hash Password<br/>Store in DB]
-    
-    Login --> ValidateLogin{Credentials<br/>Valid?}
-    ValidateLogin -->|No| LoginError[Show Error] --> Login
-    ValidateLogin -->|Yes| GenerateToken[Generate JWT Token]
-    
-    CreateAccount --> GenerateToken
-    GenerateToken --> TeacherDashboard[Teacher Dashboard]
-    
-    TeacherDashboard --> MenuChoice{Select Menu}
-    
-    MenuChoice -->|Dashboard| ViewOverview[View Overview<br/>- System Information<br/>- Quick Actions]
-    MenuChoice -->|Student Progress| TrackProgress[Track Student Progress]
-    MenuChoice -->|Assignments| ManageAssignments[Manage Assignments]
-    MenuChoice -->|Profile| ManageProfile[Manage Profile]
-    MenuChoice -->|Settings| ManageSettings[Manage Settings]
-    MenuChoice -->|Logout| Logout[Logout] --> LandingPage
-    
-    ViewOverview --> TeacherDashboard
-    ManageProfile --> TeacherDashboard
-    ManageSettings --> TeacherDashboard
-    
-    TrackProgress --> SearchStudent[Search Student by USN]
-    SearchStudent --> ValidateUSN{USN<br/>Valid?}
-    ValidateUSN -->|No| ShowError[Show Error] --> SearchStudent
-    ValidateUSN -->|Yes| FetchProgress[Fetch Student Progress<br/>from API]
-    
-    FetchProgress --> DisplayProgress[Display Progress Report<br/>- Easy Levels Completed<br/>- Intermediate Levels Completed<br/>- Hard Levels Completed<br/>- Streak Level<br/>- Badges Earned<br/>- Assignment Submissions<br/>- Game Statistics]
-    DisplayProgress --> TrackProgress
-    
-    ManageAssignments --> AssignmentChoice{Assignment<br/>Action?}
-    AssignmentChoice -->|View All| ViewAllAssignments[View All Assignments]
-    AssignmentChoice -->|Create| CreateAssignment[Create Assignment]
-    AssignmentChoice -->|Edit| EditAssignment[Edit Assignment]
-    AssignmentChoice -->|Delete| DeleteAssignment[Delete Assignment]
-    
-    ViewAllAssignments --> DisplayList[Display Assignment List<br/>- Title<br/>- Description<br/>- Created Date<br/>- Due Date<br/>- Submissions Count]
-    DisplayList --> SelectAssignment{Select<br/>Assignment?}
-    SelectAssignment -->|Yes| ViewDetails[View Assignment Details<br/>- Questions<br/>- Student Submissions<br/>- Grades]
-    SelectAssignment -->|No| ManageAssignments
-    ViewDetails --> ManageAssignments
-    
-    CreateAssignment --> FillForm[Fill Assignment Form<br/>- Title<br/>- Description<br/>- Questions Array<br/>- Due Date]
-    FillForm --> ValidateForm{Form<br/>Valid?}
-    ValidateForm -->|No| ShowFormError[Show Error] --> FillForm
-    ValidateForm -->|Yes| SubmitCreate[Submit to API]
-    SubmitCreate --> SaveAssignment[Save Assignment<br/>in Database]
-    SaveAssignment --> NotifyStudents[Notify All Students<br/>via Socket.io]
-    NotifyStudents --> Confirmation[Show Confirmation]
-    Confirmation --> ManageAssignments
-    
-    EditAssignment --> SelectEditAssignment[Select Assignment to Edit]
-    SelectEditAssignment --> LoadAssignment[Load Assignment Data]
-    LoadAssignment --> EditForm[Edit Assignment Form]
-    EditForm --> ValidateEdit{Form<br/>Valid?}
-    ValidateEdit -->|No| ShowEditError[Show Error] --> EditForm
-    ValidateEdit -->|Yes| SubmitEdit[Submit Update to API]
-    SubmitEdit --> UpdateAssignment[Update Assignment<br/>in Database]
-    UpdateAssignment --> NotifyStudentsUpdate[Notify Students<br/>of Update]
-    NotifyStudentsUpdate --> EditConfirmation[Show Confirmation]
-    EditConfirmation --> ManageAssignments
-    
-    DeleteAssignment --> SelectDeleteAssignment[Select Assignment to Delete]
-    SelectDeleteAssignment --> ConfirmDelete{Confirm<br/>Delete?}
-    ConfirmDelete -->|No| ManageAssignments
-    ConfirmDelete -->|Yes| SubmitDelete[Submit Delete to API]
-    SubmitDelete --> RemoveAssignment[Remove Assignment<br/>from Database]
-    RemoveAssignment --> DeleteConfirmation[Show Confirmation]
-    DeleteConfirmation --> ManageAssignments
-    
-    End([End])
-    Logout --> End
-```
-
-## Teacher Assignment Management Flowchart
+## Teacher Journey - Simple Version
 
 ```mermaid
 flowchart TD
-    Start([Assignment Management]) --> LoadAssignments[Load All Assignments]
-    LoadAssignments --> DisplayAssignments[Display Assignments Table]
+    Start([Teacher Opens Website]) --> LoginPage[Login Page]
+    LoginPage --> Choice{New Teacher or<br/>Existing Teacher?}
     
-    DisplayAssignments --> ActionChoice{Select Action}
+    Choice -->|New Teacher| Signup[Create Account<br/>Enter: Name, Email,<br/>Password, Phone]
+    Choice -->|Existing Teacher| Login[Enter Username<br/>and Password]
     
-    ActionChoice -->|Create| CreateFlow[Create Flow]
-    ActionChoice -->|Edit| EditFlow[Edit Flow]
-    ActionChoice -->|Delete| DeleteFlow[Delete Flow]
-    ActionChoice -->|View| ViewFlow[View Flow]
+    Signup --> CreateAccount[Account Created]
+    Login --> CheckPassword{Password<br/>Correct?}
+    CheckPassword -->|No| LoginError[Show Error] --> Login
+    CheckPassword -->|Yes| Dashboard[Teacher Dashboard]
+    CreateAccount --> Dashboard
     
-    CreateFlow --> CreateForm[Open Create Form]
-    CreateForm --> InputTitle[Input Title]
-    InputTitle --> InputDescription[Input Description]
-    InputDescription --> AddQuestions[Add Questions<br/>- Question Text<br/>- Options<br/>- Correct Answer]
-    AddQuestions --> SetDueDate[Set Due Date]
-    SetDueDate --> ValidateCreate{Validate<br/>Form?}
-    ValidateCreate -->|No| ShowError[Show Validation Error] --> CreateForm
-    ValidateCreate -->|Yes| SubmitCreate[POST /api/assignments]
-    SubmitCreate --> SaveDB[(Save to MongoDB)]
-    SaveDB --> NotifySocket[Emit Socket Event<br/>to Students]
-    NotifySocket --> SuccessCreate[Show Success Message]
-    SuccessCreate --> LoadAssignments
+    Dashboard --> WhatToDo{What do you<br/>want to do?}
     
-    EditFlow --> SelectAssignment[Select Assignment]
-    SelectAssignment --> CheckOwnership{Owned by<br/>Teacher?}
-    CheckOwnership -->|No| Unauthorized[Show Unauthorized] --> DisplayAssignments
-    CheckOwnership -->|Yes| LoadData[Load Assignment Data]
-    LoadData --> EditForm[Open Edit Form<br/>Pre-filled]
-    EditForm --> ModifyFields[Modify Fields]
-    ModifyFields --> ValidateEdit{Validate<br/>Form?}
-    ValidateEdit -->|No| ShowEditError[Show Error] --> EditForm
-    ValidateEdit -->|Yes| SubmitEdit[PUT /api/assignments/:id]
-    SubmitEdit --> UpdateDB[(Update in MongoDB)]
-    UpdateDB --> NotifyUpdate[Emit Update Event]
-    NotifyUpdate --> SuccessEdit[Show Success Message]
-    SuccessEdit --> LoadAssignments
+    WhatToDo -->|View Overview| Overview[See System Information<br/>How Students Use It]
+    WhatToDo -->|Check Student Progress| TrackProgress[Search Student by USN]
+    WhatToDo -->|Manage Assignments| ManageAssignments[Create/Edit/Delete<br/>Assignments]
+    WhatToDo -->|Update Profile| UpdateProfile[Change Profile Picture<br/>Update Information]
     
-    DeleteFlow --> SelectDelete[Select Assignment]
-    SelectDelete --> CheckDeleteOwnership{Owned by<br/>Teacher?}
-    CheckDeleteOwnership -->|No| UnauthorizedDelete[Show Unauthorized] --> DisplayAssignments
-    CheckDeleteOwnership -->|Yes| ConfirmDialog[Show Confirmation Dialog]
-    ConfirmDialog --> UserConfirm{User<br/>Confirms?}
-    UserConfirm -->|No| DisplayAssignments
-    UserConfirm -->|Yes| SubmitDelete[DELETE /api/assignments/:id]
-    SubmitDelete --> DeleteDB[(Delete from MongoDB)]
-    DeleteDB --> SuccessDelete[Show Success Message]
-    SuccessDelete --> LoadAssignments
+    Overview --> Dashboard
+    UpdateProfile --> Dashboard
     
-    ViewFlow --> SelectView[Select Assignment]
-    SelectView --> FetchDetails[Fetch Assignment Details]
-    FetchDetails --> DisplayDetails[Display Details<br/>- All Fields<br/>- Submissions List<br/>- Student Answers]
-    DisplayDetails --> DisplayAssignments
+    TrackProgress --> EnterUSN[Enter Student USN<br/>University Serial Number]
+    EnterUSN --> Search{Student<br/>Found?}
+    Search -->|No| NotFound[Show Error<br/>Student Not Found] --> EnterUSN
+    Search -->|Yes| ShowReport[Show Student Report<br/>- Levels Completed<br/>- Badges Earned<br/>- Streak Level<br/>- Assignment Submissions<br/>- Game Statistics]
+    ShowReport --> TrackProgress
     
-    End([End])
+    ManageAssignments --> Action{What Action?}
+    Action -->|Create New| CreateAssignment[Create Assignment]
+    Action -->|Edit Existing| EditAssignment[Edit Assignment]
+    Action -->|Delete| DeleteAssignment[Delete Assignment]
+    Action -->|View All| ViewAll[View All Assignments<br/>See Submissions]
+    
+    ViewAll --> ManageAssignments
+    
+    CreateAssignment --> FillForm[Fill Form<br/>- Title<br/>- Description<br/>- Add Questions<br/>- Set Due Date]
+    FillForm --> Validate{All Fields<br/>Filled?}
+    Validate -->|No| ShowError[Show Error] --> FillForm
+    Validate -->|Yes| Save[Save Assignment]
+    Save --> Notify[Notify All Students<br/>They See New Assignment]
+    Notify --> Success[Assignment Created!]
+    Success --> ManageAssignments
+    
+    EditAssignment --> Select[Select Assignment to Edit]
+    Select --> Load[Load Assignment Details]
+    Load --> Edit[Make Changes]
+    Edit --> Validate2{Changes<br/>Valid?}
+    Validate2 -->|No| ShowError2[Show Error] --> Edit
+    Validate2 -->|Yes| Update[Update Assignment]
+    Update --> Notify2[Notify Students<br/>of Changes]
+    Notify2 --> Success2[Assignment Updated!]
+    Success2 --> ManageAssignments
+    
+    DeleteAssignment --> Select2[Select Assignment to Delete]
+    Select2 --> Confirm{Are You Sure?}
+    Confirm -->|No| ManageAssignments
+    Confirm -->|Yes| Delete[Delete Assignment]
+    Delete --> Success3[Assignment Deleted!]
+    Success3 --> ManageAssignments
+    
+    End([Logout])
 ```
 
-## Teacher Student Progress Tracking Flowchart
+## How Assignments Work - Simple Explanation
 
-```mermaid
-flowchart TD
-    Start([Student Progress Tracking]) --> SearchForm[Display Search Form]
-    SearchForm --> InputUSN[Input Student USN]
-    InputUSN --> ValidateUSN{USN<br/>Format Valid?}
-    
-    ValidateUSN -->|No| ShowFormatError[Show Format Error] --> SearchForm
-    ValidateUSN -->|Yes| SubmitSearch[GET /api/progress/student/:usn]
-    
-    SubmitSearch --> CheckAuth{Teacher<br/>Authenticated?}
-    CheckAuth -->|No| RedirectLogin[Redirect to Login] --> End
-    CheckAuth -->|Yes| QueryDB[(Query MongoDB)]
-    
-    QueryDB --> StudentExists{Student<br/>Found?}
-    StudentExists -->|No| ShowNotFound[Show Not Found Error] --> SearchForm
-    StudentExists -->|Yes| FetchData[Fetch Student Data<br/>- Profile<br/>- Game Progress<br/>- Assignments<br/>- Leaderboard Stats]
-    
-    FetchData --> AggregateStats[Aggregate Statistics<br/>- Total Levels Completed<br/>- Streak Information<br/>- Badge Count<br/>- Assignment Submissions]
-    
-    AggregateStats --> DisplayReport[Display Progress Report<br/>- Student Information<br/>- Level Completion Chart<br/>- Performance Metrics<br/>- Assignment History]
-    
-    DisplayReport --> ExportOption{Export<br/>Report?}
-    ExportOption -->|Yes| GeneratePDF[Generate PDF Report]
-    ExportOption -->|No| SearchForm
-    
-    GeneratePDF --> DownloadPDF[Download PDF]
-    DownloadPDF --> SearchForm
-    
-    End([End])
-```
+**Step 1:** Teacher clicks "Create Assignment"
 
+**Step 2:** Teacher fills in:
+- Title (e.g., "Week 1 Quiz")
+- Description (what students need to do)
+- Questions (add multiple questions with options)
+- Due Date (when students must submit)
+
+**Step 3:** Teacher saves the assignment
+
+**Step 4:** All students automatically get notified about the new assignment
+
+**Step 5:** Students can view and submit the assignment
+
+**Step 6:** Teacher can see all student submissions
+
+## Tracking Student Progress - Simple Explanation
+
+**Step 1:** Teacher enters student's USN (University Serial Number)
+
+**Step 2:** System searches for the student
+
+**Step 3:** If found, teacher sees:
+- How many levels completed (Easy, Medium, Hard)
+- How many badges earned
+- Current streak level
+- Assignment submissions
+- Overall game statistics
+
+**Step 4:** Teacher can use this information to help the student improve
+
+## Key Points for Teachers
+
+1. **Login:** Use your username and password
+2. **Create Assignments:** Add questions, set due dates, notify students
+3. **Track Progress:** Search by USN to see how each student is doing
+4. **Edit/Delete:** Can modify or remove assignments you created
+5. **Notifications:** Students automatically get notified when you create or update assignments

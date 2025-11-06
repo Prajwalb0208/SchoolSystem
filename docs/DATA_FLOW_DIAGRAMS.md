@@ -1,303 +1,187 @@
-# Data Flow Diagrams
+# Data Flow Diagrams - Simple Guide
 
-## Student Data Flow Diagram
+## What is a Data Flow Diagram?
+A data flow diagram shows how information moves through the system. Think of it like showing how a letter travels from sender to receiver through different post offices.
+
+## Simple Explanation: How Information Moves
+
+### Student Side - How Data Flows
 
 ```mermaid
 flowchart LR
-    subgraph "Student Client (React)"
-        A[Student Browser]
-        B[Student Dashboard]
-        C[Game Components]
-        D[Assignment View]
-        E[Profile Manager]
-        F[Settings]
+    subgraph "Student's Computer"
+        A[Student Browser<br/>What Student Sees]
+        B[Dashboard<br/>Games, Assignments]
     end
     
-    subgraph "API Layer (Express.js)"
-        G[Auth Routes]
-        H[Game Routes]
-        I[Assignment Routes]
-        J[Student Routes]
-        K[Progress Routes]
-        L[Notes Routes]
+    subgraph "Server<br/>The Main Computer"
+        C[Login Checker]
+        D[Game Manager]
+        E[Assignment Manager]
     end
     
-    subgraph "Authentication"
-        M[JWT Token Generator]
-        N[Password Hasher]
-        O[Token Validator]
+    subgraph "Database<br/>Where Data is Stored"
+        F[(Student Info)]
+        G[(Questions)]
+        H[(Assignments)]
+        I[(Progress)]
     end
     
-    subgraph "Database (MongoDB)"
-        P[(Student Collection)]
-        Q[(Question Collection)]
-        R[(Assignment Collection)]
-        S[(Leaderboard Collection)]
-        T[(GameSession Collection)]
-    end
+    A -->|Student Clicks Something| C
+    A -->|Student Plays Game| D
+    A -->|Student Views Assignment| E
     
-    subgraph "Real-time (Socket.io)"
-        U[Socket Server]
-        V[Notification Handler]
-    end
+    C -->|Check Login| F
+    D -->|Get Questions| G
+    D -->|Save Progress| I
+    E -->|Get Assignments| H
+    E -->|Save Submission| H
     
-    subgraph "File System"
-        W[Profile Pictures]
-        X[PDF Notes]
-    end
-    
-    A -->|HTTP Request| G
-    A -->|HTTP Request| H
-    A -->|HTTP Request| I
-    A -->|HTTP Request| J
-    A -->|WebSocket| U
-    
-    B --> A
-    C --> A
-    D --> A
-    E --> A
-    F --> A
-    
-    G -->|Validate| O
-    G -->|Hash| N
-    G -->|Generate| M
-    G -->|Read/Write| P
-    
-    H -->|Validate Token| O
-    H -->|Read| Q
-    H -->|Read/Write| S
-    H -->|Read/Write| T
-    H -->|Emit| U
-    
-    I -->|Validate Token| O
-    I -->|Read| R
-    I -->|Read/Write| R
-    
-    J -->|Validate Token| O
-    J -->|Read/Write| P
-    J -->|Read| W
-    
-    K -->|Validate Token| O
-    K -->|Read| P
-    K -->|Read| T
-    
-    L -->|Read| X
-    
-    U -->|Broadcast| V
-    V -->|Push Notification| A
+    F -->|Send Info Back| A
+    G -->|Send Questions| A
+    H -->|Send Assignments| A
+    I -->|Send Progress| A
     
     style A fill:#e1f5ff
-    style P fill:#ffe1f5
-    style Q fill:#ffe1f5
-    style R fill:#ffe1f5
-    style S fill:#ffe1f5
-    style T fill:#ffe1f5
+    style F fill:#ffe1f5
+    style G fill:#ffe1f5
+    style H fill:#ffe1f5
+    style I fill:#ffe1f5
 ```
 
-## Teacher Data Flow Diagram
+### Teacher Side - How Data Flows
 
 ```mermaid
 flowchart LR
-    subgraph "Teacher Client (React)"
-        A[Teacher Browser]
-        B[Teacher Dashboard]
-        C[Assignment Manager]
-        D[Progress Tracker]
-        E[Profile Manager]
-        F[Settings]
+    subgraph "Teacher's Computer"
+        A[Teacher Browser<br/>What Teacher Sees]
+        B[Assignment Manager]
+        C[Progress Tracker]
     end
     
-    subgraph "API Layer (Express.js)"
-        G[Auth Routes]
-        H[Assignment Routes]
-        I[Progress Routes]
-        J[Teacher Routes]
+    subgraph "Server<br/>The Main Computer"
+        D[Login Checker]
+        E[Assignment Manager]
+        F[Progress Manager]
     end
     
-    subgraph "Authentication"
-        K[JWT Token Generator]
-        L[Password Hasher]
-        M[Token Validator]
-        N[Role Validator]
+    subgraph "Database<br/>Where Data is Stored"
+        G[(Teacher Info)]
+        H[(Assignments)]
+        I[(Student Info)]
+        J[(Student Progress)]
     end
     
-    subgraph "Database (MongoDB)"
-        O[(Teacher Collection)]
-        P[(Assignment Collection)]
-        Q[(Student Collection)]
-        R[(GameSession Collection)]
-        S[(Question Collection)]
-    end
+    A -->|Teacher Creates Assignment| E
+    A -->|Teacher Searches Student| F
     
-    subgraph "Real-time (Socket.io)"
-        T[Socket Server]
-        U[Notification Broadcaster]
-    end
+    E -->|Save Assignment| H
+    E -->|Notify Students| A
+    F -->|Get Student Data| I
+    F -->|Get Progress| J
     
-    subgraph "File System"
-        V[Profile Pictures]
-    end
-    
-    A -->|HTTP Request| G
-    A -->|HTTP Request| H
-    A -->|HTTP Request| I
-    A -->|HTTP Request| J
-    A -->|WebSocket| T
-    
-    B --> A
-    C --> A
-    D --> A
-    E --> A
-    F --> A
-    
-    G -->|Validate| M
-    G -->|Hash| L
-    G -->|Generate| K
-    G -->|Read/Write| O
-    
-    H -->|Validate Token| M
-    H -->|Check Role| N
-    H -->|Read/Write| P
-    H -->|Emit| T
-    
-    I -->|Validate Token| M
-    I -->|Check Role| N
-    I -->|Read| Q
-    I -->|Read| R
-    I -->|Aggregate| Q
-    
-    J -->|Validate Token| M
-    J -->|Read/Write| O
-    J -->|Read| V
-    
-    T -->|Broadcast| U
-    U -->|Push Notification| A
+    H -->|Send Assignment List| A
+    I -->|Send Student Info| A
+    J -->|Send Progress Report| A
     
     style A fill:#fff5e1
-    style O fill:#ffe1f5
-    style P fill:#ffe1f5
-    style Q fill:#ffe1f5
-    style R fill:#ffe1f5
-    style S fill:#ffe1f5
+    style H fill:#ffe1f5
+    style I fill:#ffe1f5
+    style J fill:#ffe1f5
 ```
 
-## Authentication Data Flow
+## Simple Example: Student Logging In
 
-```mermaid
-sequenceDiagram
-    participant S as Student/Teacher
-    participant C as Client (React)
-    participant A as Auth API
-    participant DB as MongoDB
-    participant JWT as JWT Service
-    
-    S->>C: Enter Credentials
-    C->>A: POST /api/auth/{role}/login
-    A->>DB: Find User by Username
-    DB-->>A: User Data
-    A->>A: Compare Password (bcrypt)
-    alt Password Valid
-        A->>JWT: Generate Token
-        JWT-->>A: JWT Token
-        A-->>C: Return Token + User Data
-        C->>C: Store Token in localStorage
-        C->>S: Redirect to Dashboard
-    else Password Invalid
-        A-->>C: Error Message
-        C->>S: Show Error
-    end
-    
-    Note over C: Subsequent Requests
-    C->>A: Request with Bearer Token
-    A->>JWT: Verify Token
-    JWT-->>A: Token Valid/Invalid
-    alt Token Valid
-        A->>DB: Process Request
-        DB-->>A: Data
-        A-->>C: Response
-    else Token Invalid
-        A-->>C: 401 Unauthorized
-    end
-```
+**Step 1:** Student enters username and password
 
-## Game Session Data Flow
+**Step 2:** System checks: "Is this password correct?"
 
-```mermaid
-sequenceDiagram
-    participant S as Student
-    participant GC as Game Component
-    participant GA as Game API
-    participant DB as MongoDB
-    participant LB as Leaderboard
-    participant SO as Socket.io
-    
-    S->>GC: Start Game
-    GC->>GA: GET /api/games/question/:difficulty/:level
-    GA->>DB: Fetch Question
-    DB-->>GA: Question Data
-    GA-->>GC: Question
-    GC->>S: Display Question
-    
-    S->>GC: Submit Answer
-    GC->>GA: POST /api/games/submit-answer
-    GA->>DB: Validate Answer
-    DB-->>GA: Correct/Incorrect
-    
-    alt Answer Correct
-        GA->>DB: Update Student Progress
-        GA->>DB: Check Badge Eligibility
-        GA->>LB: POST /api/games/leaderboard/add
-        LB->>DB: Update Leaderboard
-        GA->>SO: Emit Leaderboard Update
-        SO-->>GC: Real-time Update
-        GA-->>GC: Success + Next Level
-    else Answer Incorrect
-        GA-->>GC: Error + Retry
-    end
-    
-    GC->>S: Show Result
-```
+**Step 3:** 
+- If YES → System says "Welcome!" and shows dashboard
+- If NO → System says "Wrong password, try again"
 
-## Assignment Data Flow
+**Step 4:** System remembers student is logged in
 
-```mermaid
-sequenceDiagram
-    participant T as Teacher
-    participant TC as Teacher Client
-    participant AA as Assignment API
-    participant DB as MongoDB
-    participant SO as Socket.io
-    participant SC as Student Client
-    participant S as Student
-    
-    T->>TC: Create Assignment
-    TC->>AA: POST /api/assignments
-    AA->>DB: Save Assignment
-    DB-->>AA: Assignment Created
-    AA->>SO: Emit 'assignment_created'
-    SO-->>SC: Broadcast Notification
-    SC->>S: Show Notification
-    AA-->>TC: Success Response
-    
-    S->>SC: View Assignments
-    SC->>AA: GET /api/assignments
-    AA->>DB: Fetch Assignments
-    DB-->>AA: Assignment List
-    AA-->>SC: Assignments Data
-    SC->>S: Display Assignments
-    
-    S->>SC: Submit Assignment
-    SC->>AA: POST /api/assignments/:id/submit
-    AA->>DB: Save Submission
-    DB-->>AA: Submission Saved
-    AA-->>SC: Success Response
-    SC->>S: Show Confirmation
-    
-    T->>TC: Track Student Progress
-    TC->>AA: GET /api/progress/student/:usn
-    AA->>DB: Fetch Student Data
-    DB-->>AA: Student Progress
-    AA-->>TC: Progress Report
-    TC->>T: Display Report
-```
+**Step 5:** Student can now access games, assignments, etc.
 
+## Simple Example: Student Playing a Game
+
+**Step 1:** Student clicks "Start Game"
+
+**Step 2:** System gets a question from the question bank
+
+**Step 3:** System shows question to student
+
+**Step 4:** Student answers the question
+
+**Step 5:** System checks: "Is the answer correct?"
+
+**Step 6:** 
+- If YES → System saves progress, updates leaderboard
+- If NO → System says "Try again"
+
+**Step 7:** System shows next question or level complete
+
+## Simple Example: Teacher Creating Assignment
+
+**Step 1:** Teacher fills out assignment form
+
+**Step 2:** Teacher clicks "Save"
+
+**Step 3:** System saves assignment in database
+
+**Step 4:** System sends notification to all students
+
+**Step 5:** Students see new assignment appear on their screen
+
+**Step 6:** Students can now view and submit the assignment
+
+## Simple Example: Teacher Checking Student Progress
+
+**Step 1:** Teacher enters student's USN
+
+**Step 2:** System searches for student in database
+
+**Step 3:** System collects all student's information:
+- Game progress
+- Assignment submissions
+- Badges and streaks
+
+**Step 4:** System shows complete report to teacher
+
+**Step 5:** Teacher can see how student is performing
+
+## Key Concepts Explained Simply
+
+### What is a Database?
+Think of it like a filing cabinet where all information is stored:
+- Student information
+- Questions
+- Assignments
+- Progress records
+
+### What is a Server?
+Think of it as the main computer that:
+- Checks if login is correct
+- Gets questions from database
+- Saves student progress
+- Sends information back to student/teacher
+
+### What is Real-time Notification?
+When teacher creates an assignment, students see it immediately on their screen - like getting an instant message!
+
+### How Does Information Flow?
+1. **Student/Teacher** does something (clicks button, enters data)
+2. **Browser** sends request to server
+3. **Server** checks database
+4. **Database** sends information back
+5. **Server** processes information
+6. **Browser** shows result to student/teacher
+
+## Important Points
+
+- All data is stored safely in the database
+- System checks login before allowing access
+- Progress is saved automatically
+- Students get instant notifications when teachers create assignments
+- Everything happens quickly and automatically
