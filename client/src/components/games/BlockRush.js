@@ -20,7 +20,7 @@ const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F'
 const BOARD_WIDTH = 10;
 const BOARD_HEIGHT = 20;
 
-const BlockRush = ({ gameRunning, onScoreChange, isPaused, level = 1 }) => {
+const BlockRush = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelComplete }) => {
   const [board, setBoard] = useState(Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(0)));
   const [currentBlock, setCurrentBlock] = useState(null);
   const [currentX, setCurrentX] = useState(0);
@@ -195,6 +195,13 @@ const BlockRush = ({ gameRunning, onScoreChange, isPaused, level = 1 }) => {
             setLines(prev => {
               const newLines = prev + linesCleared;
               setGameLevel(Math.floor(newLines / (10 / level)) + 1);
+              // Check if level threshold reached (10 lines per level)
+              const LEVEL_THRESHOLD = 10 * level;
+              if (newLines >= LEVEL_THRESHOLD && onLevelComplete) {
+                setTimeout(() => {
+                  if (onLevelComplete) onLevelComplete();
+                }, 1500);
+              }
               return newLines;
             });
           }

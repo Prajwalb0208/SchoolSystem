@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import QuizPopup from './QuizPopup';
 import GameControls from './GameControls';
+import LevelComplete from './LevelComplete';
 import soundEffects from '../utils/soundEffects';
 import BlockRush from './games/BlockRush';
 import SnakeGame from './games/SnakeGame';
@@ -27,6 +28,8 @@ const Game = () => {
   const [gameScore, setGameScore] = useState(0);
   const [currentLevel, setCurrentLevel] = useState(1);
   const [progress, setProgress] = useState(0); // 0-100 for progress bar
+  const [levelCompleted, setLevelCompleted] = useState(false);
+  const [levelCompleteScore, setLevelCompleteScore] = useState(0);
   const lastWarningTimeRef = useRef(0);
   const startTimeRef = useRef(Date.now());
 
@@ -180,18 +183,42 @@ const Game = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleLevelComplete = () => {
+    setLevelCompleteScore(gameScore);
+    setLevelCompleted(true);
+    setGameRunning(false);
+    setIsPaused(true);
+    soundEffects.playSuccess();
+  };
+
+  const handleNextLevel = () => {
+    if (currentLevel < 5) {
+      setCurrentLevel(prev => prev + 1);
+      setGameScore(0);
+      setProgress(0);
+      setLevelCompleted(false);
+      setGameRunning(true);
+      setIsPaused(false);
+      setGameTime(gameTimeLimit);
+      startTimeRef.current = Date.now();
+      soundEffects.playClick();
+    }
+  };
+
+  const handleContinueCurrentLevel = () => {
+    setLevelCompleted(false);
+    setGameRunning(true);
+    setIsPaused(false);
+    soundEffects.playClick();
+  };
+
   const renderGame = () => {
     const gameProps = { 
-      gameRunning: gameRunning && !isPaused, 
+      gameRunning: gameRunning && !isPaused && !levelCompleted, 
       onScoreChange: setGameScore,
-      isPaused,
+      isPaused: isPaused || levelCompleted,
       level: currentLevel,
-      onLevelComplete: () => {
-        if (currentLevel < 5) {
-          setCurrentLevel(prev => prev + 1);
-          setGameScore(0);
-        }
-      }
+      onLevelComplete: handleLevelComplete
     };
     
     switch(gameType) {
@@ -304,6 +331,15 @@ const Game = () => {
           onComplete={handleQuizComplete}
           onRetry={handleRetry}
           passed={quizPassed}
+        />
+      )}
+
+      {levelCompleted && (
+        <LevelComplete
+          level={currentLevel}
+          score={levelCompleteScore}
+          onNextLevel={handleNextLevel}
+          onContinue={handleContinueCurrentLevel}
         />
       )}
     </div>

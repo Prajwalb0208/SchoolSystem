@@ -8,7 +8,7 @@ const GAME_TYPE = '2048';
 
 const GRID_SIZE = 4;
 
-const Game2048 = ({ gameRunning, onScoreChange, isPaused, level = 1 }) => {
+const Game2048 = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelComplete }) => {
   const TARGET_TILE = level === 1 ? 64 : level === 2 ? 128 : level === 3 ? 256 : level === 4 ? 512 : 2048;
   const [grid, setGrid] = useState(Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0)));
   const [score, setScore] = useState(0);
@@ -110,7 +110,13 @@ const Game2048 = ({ gameRunning, onScoreChange, isPaused, level = 1 }) => {
         if (i < row.length - 1 && row[i] === row[i + 1]) {
           merged.push(row[i] * 2);
           newScore += row[i] * 2;
-          if (row[i] * 2 === TARGET_TILE && !won) setWon(true);
+          if (row[i] * 2 === TARGET_TILE && !won) {
+            setWon(true);
+            // Trigger level complete after a short delay
+            setTimeout(() => {
+              if (onLevelComplete) onLevelComplete();
+            }, 1000);
+          }
           i++;
         } else {
           merged.push(row[i]);

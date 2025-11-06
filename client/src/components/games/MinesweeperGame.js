@@ -6,7 +6,7 @@ import '../Game.css';
 const API_URL = process.env.REACT_APP_API_URL || 'https://schoolsystem-lyl7.onrender.com/api';
 const GAME_TYPE = 'minesweeper';
 
-const MinesweeperGame = ({ gameRunning, onScoreChange, isPaused, level = 1 }) => {
+const MinesweeperGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelComplete }) => {
   // Calculate grid size and mine count based on level
   const GRID_SIZE = 6 + (level * 2); // Level 1: 8x8, Level 2: 10x10, Level 3: 12x12, Level 4: 14x14, Level 5: 16x16
   const MINE_COUNT = 10 + (level * 5); // Level 1: 15, Level 2: 20, Level 3: 25, Level 4: 30, Level 5: 35
@@ -150,14 +150,18 @@ const MinesweeperGame = ({ gameRunning, onScoreChange, isPaused, level = 1 }) =>
       return newScore;
     });
 
-    if (newRevealed.size === GRID_SIZE * GRID_SIZE - MINE_COUNT) {
-      setWon(true);
-      setScore(prev => {
-        const newScore = prev + 100 * level;
-        onScoreChange(newScore);
-        return newScore;
-      });
-    }
+        if (newRevealed.size === GRID_SIZE * GRID_SIZE - MINE_COUNT) {
+          setWon(true);
+          setScore(prev => {
+            const newScore = prev + 100 * level;
+            onScoreChange(newScore);
+            return newScore;
+          });
+          // Trigger level complete after a short delay
+          setTimeout(() => {
+            if (onLevelComplete) onLevelComplete();
+          }, 1000);
+        }
   };
 
   return (

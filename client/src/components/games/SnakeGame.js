@@ -10,7 +10,7 @@ const GRID_SIZE = 20;
 const INITIAL_SNAKE = [{ x: 10, y: 10 }];
 const INITIAL_DIRECTION = { x: 1, y: 0 };
 
-const SnakeGame = ({ gameRunning, onScoreChange, isPaused, level = 1 }) => {
+const SnakeGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelComplete }) => {
   const [snake, setSnake] = useState(INITIAL_SNAKE);
   const [food, setFood] = useState({ x: 15, y: 15 });
   const [direction, setDirection] = useState(INITIAL_DIRECTION);
@@ -109,6 +109,13 @@ const SnakeGame = ({ gameRunning, onScoreChange, isPaused, level = 1 }) => {
           setScore(prev => {
             const newScore = prev + 10 * level;
             onScoreChange(newScore);
+            // Check if level threshold reached (200 points per level)
+            const LEVEL_THRESHOLD = 200 * level;
+            if (newScore >= LEVEL_THRESHOLD && onLevelComplete) {
+              setTimeout(() => {
+                if (onLevelComplete) onLevelComplete();
+              }, 1500);
+            }
             return newScore;
           });
         } else {

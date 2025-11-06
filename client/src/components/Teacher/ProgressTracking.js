@@ -16,7 +16,8 @@ const ProgressTracking = () => {
   // Fetch all students on component mount
   useEffect(() => {
     fetchAllStudents();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [API_URL]);
 
   const fetchAllStudents = async () => {
     setLoadingStudents(true);
@@ -24,13 +25,22 @@ const ProgressTracking = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/progress/all`, {
+      const apiUrl = API_URL || process.env.REACT_APP_API_URL || 'https://schoolsystem-lyl7.onrender.com/api';
+      const response = await axios.get(`${apiUrl}/progress/all`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
-      setAllStudents(response.data || []);
+      
+      if (response.data && Array.isArray(response.data)) {
+        setAllStudents(response.data);
+      } else {
+        setAllStudents([]);
+        console.warn('Unexpected response format:', response.data);
+      }
     } catch (error) {
       console.error('Error fetching all students:', error);
-      setError('Failed to load students. ' + (error.response?.data?.message || ''));
+      const errorMsg = error.response?.data?.message || error.message || 'Failed to load students';
+      setError(`Failed to load students: ${errorMsg}`);
+      setAllStudents([]);
     } finally {
       setLoadingStudents(false);
     }
@@ -44,13 +54,15 @@ const ProgressTracking = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/progress/student/${studentUsn}`, {
+      const apiUrl = API_URL || process.env.REACT_APP_API_URL || 'https://schoolsystem-lyl7.onrender.com/api';
+      const response = await axios.get(`${apiUrl}/progress/student/${studentUsn}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       setProgress(response.data);
       setUsn(studentUsn);
     } catch (error) {
-      setError(error.response?.data?.message || 'Student not found');
+      console.error('Error fetching student progress:', error);
+      setError(error.response?.data?.message || error.message || 'Student not found');
       setProgress(null);
     } finally {
       setLoading(false);
@@ -106,7 +118,17 @@ const ProgressTracking = () => {
 
       {/* All Students List */}
       <div className="students-list-section">
-        <h2>All Students</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h2>All Students</h2>
+          <button 
+            onClick={fetchAllStudents} 
+            disabled={loadingStudents}
+            className="btn btn-primary"
+            style={{ padding: '8px 16px', fontSize: '0.9em' }}
+          >
+            {loadingStudents ? 'Loading...' : '🔄 Refresh'}
+          </button>
+        </div>
         {loadingStudents ? (
           <div className="loading">Loading students...</div>
         ) : allStudents.length > 0 ? (
@@ -123,12 +145,15 @@ const ProgressTracking = () => {
                       src={`${process.env.REACT_APP_BASE_URL || 'https://schoolsystem-lyl7.onrender.com'}${student.profilePicture}`}
                       alt={student.name}
                       className="student-card-photo"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextElementSibling.style.display = 'flex';
+                      }}
                     />
-                  ) : (
-                    <div className="student-card-photo-placeholder">
-                      {student.name?.[0]?.toUpperCase() || student.usn?.[0]?.toUpperCase()}
-                    </div>
-                  )}
+                  ) : null}
+                  <div className="student-card-photo-placeholder" style={{ display: student.profilePicture ? 'none' : 'flex' }}>
+                    {student.name?.[0]?.toUpperCase() || student.usn?.[0]?.toUpperCase()}
+                  </div>
                   <div className="student-card-info">
                     <h3>{student.name || student.usn}</h3>
                     <p className="student-usn">{student.usn}</p>
@@ -152,11 +177,34 @@ const ProgressTracking = () => {
             ))}
           </div>
         ) : (
-          <div className="no-students">No students found</div>
+          <div className="no-students">
+            <p>No students found in the database.</p>
+            <p style={{ marginTop: '10px', fontSize: '0.9em', color: '#666' }}>
+              Students will appear here once they start playing games and enter their USN.
+            </p>
+            <button 
+              onClick={fetchAllStudents} 
+              className="btn btn-primary"
+              style={{ marginTop: '15px' }}
+            >
+              🔄 Retry
+            </button>
+          </div>
         )}
       </div>
 
-      {error && <div className="error-message">{error}</div>}
+      {error && (
+        <div className="error-message" style={{ 
+          background: '#fee2e2', 
+          color: '#991b1b', 
+          padding: '15px', 
+          borderRadius: '8px', 
+          marginBottom: '20px',
+          border: '2px solid #ef4444'
+        }}>
+          <strong>Error:</strong> {error}
+        </div>
+      )}
 
       {progress && (
         <div className="progress-report">

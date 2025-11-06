@@ -8,7 +8,7 @@ const GAME_TYPE = 'memory';
 
 const SYMBOLS = ['💻', '🔧', '📝', '🎯', '⚡', '🚀', '⭐', '🎮', '🎨', '📱', '💡', '🔍', '🎪', '🎭', '🎬', '🎤', '🎧', '🎵', '🎸', '🎹'];
 
-const MemoryGame = ({ gameRunning, onScoreChange, isPaused, level = 1 }) => {
+const MemoryGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelComplete }) => {
   const CARD_COUNT = 4 + (level * 2); // Level 1: 6 cards, Level 2: 8, Level 3: 10, Level 4: 12, Level 5: 14
   const [cards, setCards] = useState([]);
   const [flipped, setFlipped] = useState([]);
@@ -98,11 +98,15 @@ const MemoryGame = ({ gameRunning, onScoreChange, isPaused, level = 1 }) => {
   }, [gameRunning, gameOver, cards, flipped, matched, score, moves]);
 
   useEffect(() => {
-    if (matched.length === CARD_COUNT && gameRunning) {
+    if (matched.length === CARD_COUNT && gameRunning && onLevelComplete) {
       setGameOver(true);
       onScoreChange(score + 50 * level);
+      // Trigger level complete after a short delay
+      setTimeout(() => {
+        if (onLevelComplete) onLevelComplete();
+      }, 1000);
     }
-  }, [matched, CARD_COUNT, gameRunning, score, level, onScoreChange]);
+  }, [matched, CARD_COUNT, gameRunning, score, level, onScoreChange, onLevelComplete]);
 
   const handleCardClick = (cardId) => {
     if (!gameRunning || gameOver || isPaused || flipped.length >= 2 || matched.includes(cardId) || flipped.includes(cardId)) return;

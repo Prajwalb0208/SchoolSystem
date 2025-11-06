@@ -6,7 +6,7 @@ import '../Game.css';
 const API_URL = process.env.REACT_APP_API_URL || 'https://schoolsystem-lyl7.onrender.com/api';
 const GAME_TYPE = 'sudoku';
 
-const SudokuGame = ({ gameRunning, onScoreChange, isPaused, level = 1 }) => {
+const SudokuGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelComplete }) => {
   const [grid, setGrid] = useState(Array(9).fill(null).map(() => Array(9).fill(0)));
   const [initialGrid, setInitialGrid] = useState(Array(9).fill(null).map(() => Array(9).fill(0)));
   const [selectedCell, setSelectedCell] = useState(null);
@@ -261,6 +261,10 @@ const SudokuGame = ({ gameRunning, onScoreChange, isPaused, level = 1 }) => {
         onScoreChange(finalScore);
         return finalScore;
       });
+      // Trigger level complete after a short delay
+      setTimeout(() => {
+        if (onLevelComplete) onLevelComplete();
+      }, 1000);
     }
   }, [selectedCell, gameRunning, isPaused, completed, grid, initialGrid, isValidPlacement, checkCompletion, level, onScoreChange, invalidCells]);
 
