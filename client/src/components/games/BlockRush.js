@@ -31,18 +31,9 @@ const BlockRush = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelCom
   const [gameOver, setGameOver] = useState(false);
   const gameLoopRef = useRef(null);
 
-  const saveCheckpoint = async () => {
+  const saveCheckpoint = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const gameState = {
-        board,
-        currentBlock,
-        currentX,
-        currentY,
-        score,
-        lines,
-        level
-      };
       await axios.post(
         `${API_URL}/games/checkpoint/save`,
         { gameType: GAME_TYPE, gameState: { board, currentBlock, currentX, currentY, score, lines, level: gameLevel }, score, level: gameLevel },
@@ -52,9 +43,9 @@ const BlockRush = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelCom
     } catch (error) {
       console.error('Error saving checkpoint:', error);
     }
-  };
+  }, [board, currentBlock, currentX, currentY, score, lines, gameLevel]);
 
-  const loadCheckpoint = async () => {
+  const loadCheckpoint = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(
@@ -76,7 +67,7 @@ const BlockRush = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelCom
       console.error('Error loading checkpoint:', error);
       return false;
     }
-  };
+  }, [level, onScoreChange]);
 
   const handleRetry = () => {
     setBoard(Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(0)));
@@ -94,7 +85,7 @@ const BlockRush = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelCom
     if (gameRunning && !gameOver) {
       loadCheckpoint();
     }
-  }, [gameRunning]);
+  }, [gameRunning, gameOver, loadCheckpoint]);
 
   // Auto-save checkpoint every 30 seconds
   useEffect(() => {
@@ -103,7 +94,7 @@ const BlockRush = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelCom
       saveCheckpoint();
     }, 30000);
     return () => clearInterval(autoSaveInterval);
-  }, [gameRunning, gameOver, board, score, lines, level]);
+  }, [gameRunning, gameOver, board, score, lines, level, saveCheckpoint]);
 
   const createBlock = useCallback(() => {
     const shapeIndex = Math.floor(Math.random() * SHAPES.length);
@@ -220,7 +211,7 @@ const BlockRush = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelCom
     return () => {
       if (gameLoopRef.current) clearInterval(gameLoopRef.current);
     };
-  }, [gameRunning, gameOver, currentBlock, currentX, board, level, gameLevel, createBlock, checkCollision, placeBlock, clearLines, onScoreChange]);
+  }, [gameRunning, gameOver, currentBlock, currentX, board, level, gameLevel, createBlock, checkCollision, placeBlock, clearLines, onScoreChange, onLevelComplete]);
 
   useEffect(() => {
     if (!gameRunning || gameOver) return;
@@ -247,6 +238,8 @@ const BlockRush = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelCom
           if (!checkCollision(rotatedBlock, currentX, currentY, board)) {
             setCurrentBlock(rotatedBlock);
           }
+          break;
+        default:
           break;
       }
     };

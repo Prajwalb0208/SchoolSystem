@@ -64,7 +64,7 @@ const MinesweeperGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLe
     }
   };
 
-  const loadCheckpoint = async () => {
+  const loadCheckpoint = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(
@@ -86,7 +86,7 @@ const MinesweeperGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLe
     } catch (error) {
       return false;
     }
-  };
+  }, [onScoreChange]);
 
   const handleRetry = () => {
     initializeGrid();
@@ -100,7 +100,7 @@ const MinesweeperGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLe
         if (!loaded) initializeGrid();
       });
     }
-  }, [gameRunning, initializeGrid, isPaused, level]);
+  }, [gameRunning, initializeGrid, isPaused, level, loadCheckpoint]);
 
   const handleCellClick = (row, col, isRightClick = false) => {
     if (!gameRunning || gameOver || won || isPaused) return;

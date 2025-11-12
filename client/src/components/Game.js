@@ -116,7 +116,7 @@ const Game = () => {
     }
 
     return () => clearInterval(timer);
-  }, [gameRunning, showQuiz, isPaused, handleTimeUp]);
+  }, [gameRunning, showQuiz, isPaused, handleTimeUp, gameTimeLimit]);
 
   const handleQuizComplete = async (passed, quizAnswers) => {
     setQuizPassed(passed);

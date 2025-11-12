@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import './ProgressTracking.css';
@@ -46,7 +46,7 @@ const ProgressTracking = () => {
     }
   };
 
-  const fetchProgress = async (studentUsn) => {
+  const fetchProgress = useCallback(async (studentUsn) => {
     if (!studentUsn || !studentUsn.trim()) return;
 
     setLoading(true);
@@ -67,7 +67,7 @@ const ProgressTracking = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -85,7 +85,7 @@ const ProgressTracking = () => {
       }, 5000); // Refresh every 5 seconds
       return () => clearInterval(interval);
     }
-  }, [autoRefresh, usn]);
+  }, [autoRefresh, usn, fetchProgress]);
 
   return (
     <div className="progress-container">

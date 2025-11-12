@@ -18,7 +18,7 @@ const SnakeGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelCom
   const [gameOver, setGameOver] = useState(false);
   const gameLoopRef = useRef(null);
 
-  const saveCheckpoint = async () => {
+  const saveCheckpoint = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const gameState = { snake, food, direction, score };
@@ -31,9 +31,9 @@ const SnakeGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelCom
     } catch (error) {
       console.error('Error saving checkpoint:', error);
     }
-  };
+  }, [snake, food, direction, score, level]);
 
-  const loadCheckpoint = async () => {
+  const loadCheckpoint = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(
@@ -51,7 +51,7 @@ const SnakeGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelCom
     } catch (error) {
       return false;
     }
-  };
+  }, [onScoreChange]);
 
   const handleRetry = () => {
     setSnake(INITIAL_SNAKE);
@@ -66,7 +66,7 @@ const SnakeGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelCom
     if (gameRunning && !gameOver && !isPaused) {
       loadCheckpoint();
     }
-  }, [gameRunning, isPaused]);
+  }, [gameRunning, isPaused, gameOver, loadCheckpoint]);
 
   useEffect(() => {
     if (!gameRunning || gameOver || isPaused) return;
@@ -74,7 +74,7 @@ const SnakeGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelCom
       saveCheckpoint();
     }, 30000);
     return () => clearInterval(autoSaveInterval);
-  }, [gameRunning, gameOver, isPaused, snake, food, score, level]);
+  }, [gameRunning, gameOver, isPaused, saveCheckpoint]);
 
   const generateFood = useCallback(() => {
     return {
@@ -131,7 +131,7 @@ const SnakeGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelCom
     return () => {
       if (gameLoopRef.current) clearInterval(gameLoopRef.current);
     };
-  }, [gameRunning, gameOver, isPaused, direction, food, generateFood, onScoreChange, level]);
+  }, [gameRunning, gameOver, isPaused, direction, food, generateFood, onScoreChange, level, onLevelComplete]);
 
   useEffect(() => {
     if (!gameRunning || gameOver || isPaused) return;
@@ -153,6 +153,8 @@ const SnakeGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelCom
         case 'ArrowRight':
           e.preventDefault();
           if (direction.x === 0) setDirection({ x: 1, y: 0 });
+          break;
+        default:
           break;
       }
     };

@@ -17,7 +17,7 @@ const MemoryGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelCo
   const [moves, setMoves] = useState(0);
   const [gameOver, setGameOver] = useState(false);
 
-  const saveCheckpoint = async () => {
+  const saveCheckpoint = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const gameState = { cards, flipped, matched, score, moves };
@@ -30,9 +30,9 @@ const MemoryGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelCo
     } catch (error) {
       console.error('Error saving checkpoint:', error);
     }
-  };
+  }, [cards, flipped, matched, score, moves]);
 
-  const loadCheckpoint = async () => {
+  const loadCheckpoint = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(
@@ -51,7 +51,7 @@ const MemoryGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelCo
     } catch (error) {
       return false;
     }
-  };
+  }, [onScoreChange]);
 
   const handleRetry = () => {
     initializeCards();
@@ -87,7 +87,7 @@ const MemoryGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelCo
         }
       });
     }
-  }, [gameRunning, initializeCards, isPaused, level]);
+  }, [gameRunning, initializeCards, isPaused, level, loadCheckpoint]);
 
   useEffect(() => {
     if (!gameRunning || gameOver) return;
@@ -95,7 +95,7 @@ const MemoryGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelCo
       saveCheckpoint();
     }, 30000);
     return () => clearInterval(autoSaveInterval);
-  }, [gameRunning, gameOver, cards, flipped, matched, score, moves]);
+  }, [gameRunning, gameOver, saveCheckpoint]);
 
   useEffect(() => {
     if (matched.length === CARD_COUNT && gameRunning && onLevelComplete) {

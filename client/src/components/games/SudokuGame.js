@@ -266,7 +266,7 @@ const SudokuGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelCo
         if (onLevelComplete) onLevelComplete();
       }, 1000);
     }
-  }, [selectedCell, gameRunning, isPaused, completed, grid, initialGrid, isValidPlacement, checkCompletion, level, onScoreChange, invalidCells]);
+  }, [selectedCell, gameRunning, isPaused, completed, grid, initialGrid, isValidPlacement, checkCompletion, level, onScoreChange, invalidCells, onLevelComplete]);
 
   // Revalidate all cells whenever grid changes (but don't regenerate puzzle)
   useEffect(() => {

@@ -51,7 +51,7 @@ const Game2048 = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelComp
     }
   };
 
-  const loadCheckpoint = async () => {
+  const loadCheckpoint = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(
@@ -68,7 +68,7 @@ const Game2048 = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelComp
     } catch (error) {
       return false;
     }
-  };
+  }, [onScoreChange]);
 
   const handleRetry = () => {
     initializeGrid();
@@ -80,9 +80,9 @@ const Game2048 = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelComp
         if (!loaded) initializeGrid();
       });
     }
-  }, [gameRunning, initializeGrid, isPaused, level]);
+  }, [gameRunning, initializeGrid, isPaused, level, loadCheckpoint]);
 
-  const move = (direction) => {
+  const move = useCallback((direction) => {
     if (!gameRunning || gameOver || isPaused) return;
     
     let newGrid = grid.map(row => [...row]);
@@ -147,7 +147,7 @@ const Game2048 = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelComp
       })
     );
     if (!canMove) setGameOver(true);
-  };
+  }, [gameRunning, gameOver, isPaused, grid, score, won, onScoreChange, onLevelComplete]);
 
   useEffect(() => {
     if (!gameRunning || gameOver || isPaused) return;
@@ -161,7 +161,7 @@ const Game2048 = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelComp
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [gameRunning, gameOver, grid, isPaused]);
+  }, [gameRunning, gameOver, isPaused, move]);
 
   return (
     <div className="game2048-container">
