@@ -117,7 +117,7 @@ Frontend will run on http://localhost:3000
 2. Complete profile with all details
 3. Go to Games section
 4. Start with Easy level
-5. Answer questions (questions appear every 5 minutes)
+5. Answer questions (questions appear every 2 minutes)
 6. Progress through levels
 7. View leaderboard
 8. Check assignments

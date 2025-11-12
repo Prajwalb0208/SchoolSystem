@@ -54,6 +54,38 @@ const GameSelection = () => {
       description: 'Fill the 9x9 grid with numbers 1-9. No repeats in rows, columns, or boxes!',
       color: '#607D8B',
       difficulty: 'Hard'
+    },
+    {
+      id: 'carracing',
+      name: 'Car Racing',
+      icon: '🏎️',
+      description: 'Race through traffic! Avoid obstacles and reach the finish line.',
+      color: '#FF4444',
+      difficulty: 'Medium'
+    },
+    {
+      id: 'stumbleguys',
+      name: 'Stumble Guys',
+      icon: '🏃',
+      description: 'Navigate through obstacle courses! Jump, dodge, and reach the finish.',
+      color: '#FF6B9D',
+      difficulty: 'Hard'
+    },
+    {
+      id: 'wordconnect',
+      name: 'Word Connect',
+      icon: '🔤',
+      description: 'Connect letters to form words! Find all words to complete the level.',
+      color: '#667eea',
+      difficulty: 'Easy'
+    },
+    {
+      id: 'monopoly',
+      name: 'Monopoly',
+      icon: '🏰',
+      description: 'Multiplayer board game! Buy properties, collect rent, and become the richest!',
+      color: '#2c3e50',
+      difficulty: 'Medium'
     }
   ];
 
@@ -66,7 +98,7 @@ const GameSelection = () => {
     <div className="game-selection-page">
       <div className="game-selection-container">
         <h1>🎮 Choose Your Game</h1>
-        <p className="subtitle">Select a game to play. Quiz will appear after 5 minutes!</p>
+        <p className="subtitle">Select a game to play. Quiz will appear after 2 minutes!</p>
         
         <div className="games-grid">
           {games.map((game) => (
@@ -103,7 +135,7 @@ const GameSelection = () => {
         <div className="game-info-box">
           <h3>📋 How It Works</h3>
           <ul>
-            <li>Play any game for 5 minutes</li>
+            <li>Play any game for 2 minutes</li>
             <li>A quiz with coding questions will appear automatically</li>
             <li>Answer at least 3 out of 5 questions correctly to continue</li>
             <li>Your progress is tracked for each game</li>

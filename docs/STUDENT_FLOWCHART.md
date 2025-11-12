@@ -14,7 +14,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    Start([Start Game]) --> Play[1. Play Game<br/>for 5 Minutes]
+    Start([Start Game]) --> Play[1. Play Game<br/>for 2 Minutes]
     Play --> Quiz[2. Answer Quiz<br/>5 Questions]
     Quiz --> Result[3. Check Result<br/>Need 3 Correct to Pass]
     Result --> End([Continue or Retry])

@@ -80,7 +80,7 @@ const DashboardHome = () => {
         </div>
         <div className="stat-card">
           <h3>📊 Overview</h3>
-          <p>Students play a game for 5 minutes. After 5 minutes, a quiz appears with 5 questions. They need at least 3 correct answers to continue playing.</p>
+          <p>Students play a game for 2 minutes. After 2 minutes, a quiz appears with 5 questions. They need at least 3 correct answers to continue playing.</p>
         </div>
       </div>
     </div>

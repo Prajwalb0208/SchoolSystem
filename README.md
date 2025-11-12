@@ -155,13 +155,13 @@ SchoolSystem/
 ### Easy Level
 - 50 levels
 - Multiple choice questions
-- Questions trigger every 5 minutes
+- Questions trigger every 2 minutes
 - Basic coding concepts
 
 ### Intermediate Level
 - 100 levels
 - Code blocks (2-3 lines each) that need to be arranged
-- Questions trigger every 5 minutes
+- Questions trigger every 2 minutes
 - Gold badge for 5 consecutive questions in 45 seconds each
 
 ### Hard Level

@@ -57,7 +57,7 @@ npm start
 
 ## Important Notes
 
-- Questions appear every 5 minutes in Easy and Intermediate levels
+- Questions appear every 2 minutes in Easy and Intermediate levels
 - Hard level requires spinning wheel to select programming language
 - Only first 5 students to complete Hard level correctly pass
 - Maintain 30 minutes daily playtime to keep streak

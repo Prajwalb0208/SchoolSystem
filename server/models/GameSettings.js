@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const gameSettingsSchema = new mongoose.Schema({
   gameTimeLimit: {
     type: Number, // in seconds
-    default: 300, // 5 minutes
+    default: 120, // 2 minutes
     min: 60, // minimum 1 minute
     max: 1800 // maximum 30 minutes
   },

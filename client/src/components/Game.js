@@ -11,6 +11,10 @@ import MemoryGame from './games/MemoryGame';
 import MinesweeperGame from './games/MinesweeperGame';
 import Game2048 from './games/Game2048';
 import SudokuGame from './games/SudokuGame';
+import CarRacingGame from './games/CarRacingGame';
+import StumbleGuysGame from './games/StumbleGuysGame';
+import WordConnectGame from './games/WordConnectGame';
+import MonopolyGame from './games/MonopolyGame';
 import './Game.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://schoolsystem-lyl7.onrender.com/api';
@@ -18,8 +22,8 @@ const API_URL = process.env.REACT_APP_API_URL || 'https://schoolsystem-lyl7.onre
 const Game = () => {
   const { gameType } = useParams();
   const navigate = useNavigate();
-  const [gameTimeLimit, setGameTimeLimit] = useState(300); // Default 5 minutes, will be fetched from settings
-  const [gameTime, setGameTime] = useState(300); // Current time remaining
+  const [gameTimeLimit, setGameTimeLimit] = useState(120); // Default 2 minutes, will be fetched from settings
+  const [gameTime, setGameTime] = useState(120); // Current time remaining
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizData, setQuizData] = useState(null);
   const [quizPassed, setQuizPassed] = useState(false);
@@ -38,7 +42,7 @@ const Game = () => {
     const fetchSettings = async () => {
       try {
         const response = await axios.get(`${API_URL}/settings`);
-        const timeLimit = response.data.gameTimeLimit || 300;
+        const timeLimit = response.data.gameTimeLimit || 120;
         setGameTimeLimit(timeLimit);
         setGameTime(timeLimit);
       } catch (error) {
@@ -234,6 +238,14 @@ const Game = () => {
         return <Game2048 {...gameProps} />;
       case 'sudoku':
         return <SudokuGame {...gameProps} />;
+      case 'carracing':
+        return <CarRacingGame {...gameProps} />;
+      case 'stumbleguys':
+        return <StumbleGuysGame {...gameProps} />;
+      case 'wordconnect':
+        return <WordConnectGame {...gameProps} />;
+      case 'monopoly':
+        return <MonopolyGame {...gameProps} />;
       default:
         return <div>Game not found</div>;
     }
@@ -245,7 +257,11 @@ const Game = () => {
     memory: 'Memory Match',
     minesweeper: 'Minesweeper',
     2048: '2048 Game',
-    sudoku: 'Sudoku'
+    sudoku: 'Sudoku',
+    carracing: 'Car Racing',
+    stumbleguys: 'Stumble Guys',
+    wordconnect: 'Word Connect',
+    monopoly: 'Monopoly'
   };
 
   return (

@@ -9,7 +9,7 @@ const Settings = () => {
   const { API_URL: contextAPI_URL } = useAuth();
   const apiUrl = contextAPI_URL || API_URL;
   const [settings, setSettings] = useState({
-    gameTimeLimit: 300, // 5 minutes default
+    gameTimeLimit: 120, // 2 minutes default
     quizQuestionCount: 5,
     quizPassingScore: 3
   });
@@ -26,7 +26,7 @@ const Settings = () => {
     try {
       const response = await axios.get(`${apiUrl}/settings`);
       setSettings({
-        gameTimeLimit: response.data.gameTimeLimit || 300,
+        gameTimeLimit: response.data.gameTimeLimit || 120,
         quizQuestionCount: response.data.quizQuestionCount || 5,
         quizPassingScore: response.data.quizPassingScore || 3
       });
