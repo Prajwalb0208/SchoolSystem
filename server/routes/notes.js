@@ -1,6 +1,12 @@
-const express = require('express');
-const path = require('path');
-const fs = require('fs');
+import express from 'express';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const router = express.Router();
 
 // Get notes PDF for a programming language
@@ -59,5 +65,4 @@ router.get('/', async (req, res) => {
   }
 });
 
-module.exports = router;
-
+export default router;

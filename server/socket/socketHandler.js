@@ -1,8 +1,8 @@
-const GameSession = require('../models/GameSession');
-const Leaderboard = require('../models/Leaderboard');
-const Student = require('../models/Student');
+import GameSession from '../models/GameSession.js';
+import Leaderboard from '../models/Leaderboard.js';
+import Student from '../models/Student.js';
 
-module.exports = (io) => {
+export default (io) => {
   io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
@@ -400,4 +400,3 @@ module.exports = (io) => {
     });
   });
 };
-

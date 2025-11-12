@@ -1,9 +1,15 @@
-const express = require('express');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const Teacher = require('../models/Teacher');
-const { auth, teacherAuth } = require('../middleware/auth');
+import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import Teacher from '../models/Teacher.js';
+import { auth, teacherAuth } from '../middleware/auth.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const router = express.Router();
 
 // Configure multer for file uploads
@@ -89,5 +95,4 @@ router.put('/profile', auth, teacherAuth, upload.single('profilePicture'), async
   }
 });
 
-module.exports = router;
-
+export default router;

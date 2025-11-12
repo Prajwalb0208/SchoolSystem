@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const gameSessionSchema = new mongoose.Schema({
   studentId: {
@@ -45,5 +45,5 @@ const gameSessionSchema = new mongoose.Schema({
   timestamps: true
 });
 
-module.exports = mongoose.model('GameSession', gameSessionSchema);
+export default mongoose.model('GameSession', gameSessionSchema);
 

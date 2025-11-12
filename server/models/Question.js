@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const questionSchema = new mongoose.Schema({
   difficulty: {
@@ -68,5 +68,5 @@ const questionSchema = new mongoose.Schema({
 questionSchema.index({ difficulty: 1, level: 1 });
 questionSchema.index({ difficulty: 1, language: 1 });
 
-module.exports = mongoose.model('Question', questionSchema);
+export default mongoose.model('Question', questionSchema);
 

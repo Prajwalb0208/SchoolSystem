@@ -1,11 +1,14 @@
-const express = require('express');
-const Question = require('../models/Question');
-const GameSession = require('../models/GameSession');
-const QuizSession = require('../models/QuizSession');
-const Leaderboard = require('../models/Leaderboard');
-const Student = require('../models/Student');
-const Checkpoint = require('../models/Checkpoint');
-const { auth, studentAuth } = require('../middleware/auth');
+import express from 'express';
+import jwt from 'jsonwebtoken';
+import Question from '../models/Question.js';
+import GameSession from '../models/GameSession.js';
+import QuizSession from '../models/QuizSession.js';
+import Leaderboard from '../models/Leaderboard.js';
+import Student from '../models/Student.js';
+import Teacher from '../models/Teacher.js';
+import Checkpoint from '../models/Checkpoint.js';
+import { auth, studentAuth } from '../middleware/auth.js';
+
 const router = express.Router();
 
 // Optional auth middleware for quiz
@@ -14,11 +17,9 @@ const optionalAuthQuiz = async (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     if (token) {
       try {
-        const jwt = require('jsonwebtoken');
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
         let user = await Student.findById(decoded.id);
         if (!user) {
-          const Teacher = require('../models/Teacher');
           user = await Teacher.findById(decoded.id);
         }
         if (user) {
@@ -571,5 +572,4 @@ router.delete('/checkpoint/:gameType', auth, async (req, res) => {
   }
 });
 
-module.exports = router;
-
+export default router;

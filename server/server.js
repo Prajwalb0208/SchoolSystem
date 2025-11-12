@@ -1,11 +1,27 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const http = require('http');
-const socketIo = require('socket.io');
-const path = require('path');
-const fs = require('fs');
-require('dotenv').config();
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import http from 'http';
+import { Server as socketIo } from 'socket.io';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import dotenv from 'dotenv';
+import socketHandler from './socket/socketHandler.js';
+import authRoutes from './routes/auth.js';
+import studentsRoutes from './routes/students.js';
+import teachersRoutes from './routes/teachers.js';
+import gamesRoutes from './routes/games.js';
+import assignmentsRoutes from './routes/assignments.js';
+import progressRoutes from './routes/progress.js';
+import notesRoutes from './routes/notes.js';
+import settingsRoutes from './routes/settings.js';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
@@ -15,7 +31,7 @@ const allowedOrigins = ['*']; // Allow all origins
 // Log allowed origins for debugging
 console.log('CORS: Allowing all origins');
 
-const io = socketIo(server, {
+const io = new socketIo(server, {
   cors: {
     origin: function(origin, callback) {
       callback(null, true); // Allow all origins
@@ -83,17 +99,17 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/schoolsys
 .catch(err => console.error('MongoDB connection error:', err));
 
 // Socket.io for real-time game competition
-require('./socket/socketHandler')(io);
+socketHandler(io);
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/students', require('./routes/students'));
-app.use('/api/teachers', require('./routes/teachers'));
-app.use('/api/games', require('./routes/games'));
-app.use('/api/assignments', require('./routes/assignments'));
-app.use('/api/progress', require('./routes/progress'));
-app.use('/api/notes', require('./routes/notes'));
-app.use('/api/settings', require('./routes/settings'));
+app.use('/api/auth', authRoutes);
+app.use('/api/students', studentsRoutes);
+app.use('/api/teachers', teachersRoutes);
+app.use('/api/games', gamesRoutes);
+app.use('/api/assignments', assignmentsRoutes);
+app.use('/api/progress', progressRoutes);
+app.use('/api/notes', notesRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Serve static files from React app build
 const buildPath = path.join(__dirname, '../client/build');
@@ -118,4 +134,3 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-

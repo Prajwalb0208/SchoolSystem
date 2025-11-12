@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const gameSettingsSchema = new mongoose.Schema({
   gameTimeLimit: {
@@ -39,5 +39,5 @@ gameSettingsSchema.statics.getSettings = async function() {
   return settings;
 };
 
-module.exports = mongoose.model('GameSettings', gameSettingsSchema);
+export default mongoose.model('GameSettings', gameSettingsSchema);
 

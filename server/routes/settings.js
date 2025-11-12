@@ -1,7 +1,9 @@
-const express = require('express');
+import express from 'express';
+import GameSettings from '../models/GameSettings.js';
+import { auth } from '../middleware/auth.js';
+import Teacher from '../models/Teacher.js';
+
 const router = express.Router();
-const GameSettings = require('../models/GameSettings');
-const { auth } = require('../middleware/auth');
 
 // Get game settings (public - anyone can read)
 router.get('/', async (req, res) => {
@@ -17,7 +19,6 @@ router.get('/', async (req, res) => {
 router.put('/', auth, async (req, res) => {
   try {
     // Check if user is teacher
-    const Teacher = require('../models/Teacher');
     const teacher = await Teacher.findById(req.userId);
     
     if (!teacher) {
@@ -75,5 +76,4 @@ router.put('/', auth, async (req, res) => {
   }
 });
 
-module.exports = router;
-
+export default router;

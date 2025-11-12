@@ -1,7 +1,10 @@
-const express = require('express');
-const Student = require('../models/Student');
-const GameSession = require('../models/GameSession');
-const { auth, teacherAuth } = require('../middleware/auth');
+import express from 'express';
+import jwt from 'jsonwebtoken';
+import Student from '../models/Student.js';
+import Teacher from '../models/Teacher.js';
+import GameSession from '../models/GameSession.js';
+import { auth, teacherAuth } from '../middleware/auth.js';
+
 const router = express.Router();
 
 // Optional auth middleware - allows requests with or without token
@@ -11,13 +14,11 @@ const optionalAuth = async (req, res, next) => {
     
     if (token) {
       try {
-        const jwt = require('jsonwebtoken');
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
         
         // Check if user is student or teacher
         let user = await Student.findById(decoded.id);
         if (!user) {
-          const Teacher = require('../models/Teacher');
           user = await Teacher.findById(decoded.id);
           if (user) {
             req.userType = 'teacher';
@@ -103,5 +104,4 @@ router.get('/all', optionalAuth, async (req, res) => {
   }
 });
 
-module.exports = router;
-
+export default router;

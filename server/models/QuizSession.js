@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const quizSessionSchema = new mongoose.Schema({
   studentId: {
@@ -54,5 +54,5 @@ const quizSessionSchema = new mongoose.Schema({
 // Index for efficient queries
 quizSessionSchema.index({ studentId: 1, difficulty: 1, level: 1 });
 
-module.exports = mongoose.model('QuizSession', quizSessionSchema);
+export default mongoose.model('QuizSession', quizSessionSchema);
 

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const checkpointSchema = new mongoose.Schema({
   studentId: {
@@ -38,5 +38,5 @@ const checkpointSchema = new mongoose.Schema({
 // Index for efficient queries
 checkpointSchema.index({ studentId: 1, gameType: 1, isActive: 1 });
 
-module.exports = mongoose.model('Checkpoint', checkpointSchema);
+export default mongoose.model('Checkpoint', checkpointSchema);
 

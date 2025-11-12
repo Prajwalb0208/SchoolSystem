@@ -1,8 +1,8 @@
-const jwt = require('jsonwebtoken');
-const Student = require('../models/Student');
-const Teacher = require('../models/Teacher');
+import jwt from 'jsonwebtoken';
+import Student from '../models/Student.js';
+import Teacher from '../models/Teacher.js';
 
-const auth = async (req, res, next) => {
+export const auth = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
@@ -35,7 +35,7 @@ const auth = async (req, res, next) => {
   }
 };
 
-const studentAuth = async (req, res, next) => {
+export const studentAuth = async (req, res, next) => {
   try {
     if (req.userType !== 'student') {
       return res.status(403).json({ message: 'Access denied. Student only.' });
@@ -46,7 +46,7 @@ const studentAuth = async (req, res, next) => {
   }
 };
 
-const teacherAuth = async (req, res, next) => {
+export const teacherAuth = async (req, res, next) => {
   try {
     if (req.userType !== 'teacher') {
       return res.status(403).json({ message: 'Access denied. Teacher only.' });
@@ -56,6 +56,3 @@ const teacherAuth = async (req, res, next) => {
     res.status(403).json({ message: 'Access denied' });
   }
 };
-
-module.exports = { auth, studentAuth, teacherAuth };
-

@@ -1,7 +1,8 @@
-const express = require('express');
-const Assignment = require('../models/Assignment');
-const Student = require('../models/Student');
-const { auth, teacherAuth, studentAuth } = require('../middleware/auth');
+import express from 'express';
+import Assignment from '../models/Assignment.js';
+import Student from '../models/Student.js';
+import { auth, teacherAuth, studentAuth } from '../middleware/auth.js';
+
 const router = express.Router();
 
 // Get all assignments (Students can read, Teachers can read/write)
@@ -187,5 +188,4 @@ router.get('/:id/submission', auth, studentAuth, async (req, res) => {
   }
 });
 
-module.exports = router;
-
+export default router;

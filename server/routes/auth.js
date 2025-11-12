@@ -1,8 +1,9 @@
-const express = require('express');
-const jwt = require('jsonwebtoken');
-const Student = require('../models/Student');
-const Teacher = require('../models/Teacher');
-const { body, validationResult } = require('express-validator');
+import express from 'express';
+import jwt from 'jsonwebtoken';
+import Student from '../models/Student.js';
+import Teacher from '../models/Teacher.js';
+import { body, validationResult } from 'express-validator';
+
 const router = express.Router();
 
 // Generate JWT Token
@@ -214,5 +215,4 @@ router.post('/teacher/login', [
   }
 });
 
-module.exports = router;
-
+export default router;

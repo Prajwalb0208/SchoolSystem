@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const leaderboardSchema = new mongoose.Schema({
   difficulty: {
@@ -40,5 +40,5 @@ const leaderboardSchema = new mongoose.Schema({
 leaderboardSchema.index({ difficulty: 1, level: 1 });
 leaderboardSchema.index({ 'entries.completedAt': -1 });
 
-module.exports = mongoose.model('Leaderboard', leaderboardSchema);
+export default mongoose.model('Leaderboard', leaderboardSchema);
 
