@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const GameSettings = require('../models/GameSettings');
-const auth = require('../middleware/auth');
+const { auth } = require('../middleware/auth');
 
 // Get game settings (public - anyone can read)
 router.get('/', async (req, res) => {
