@@ -1,55 +1,123 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './WordConnectGame.css';
 
-const WORDS = [
-  ['CAT', 'DOG', 'BIRD', 'FISH'],
-  ['SUN', 'MOON', 'STAR', 'SKY'],
-  ['TREE', 'FLOWER', 'GRASS', 'LEAF'],
-  ['BOOK', 'PEN', 'PAPER', 'READ'],
-  ['CAR', 'BUS', 'BIKE', 'ROAD'],
-  ['HOUSE', 'DOOR', 'WINDOW', 'ROOF'],
-  ['WATER', 'FIRE', 'EARTH', 'AIR'],
-  ['RED', 'BLUE', 'GREEN', 'YELLOW'],
-  ['APPLE', 'BANANA', 'ORANGE', 'GRAPE'],
-  ['HAPPY', 'SAD', 'ANGRY', 'CALM']
+// Word Search Game - Find words in a grid
+const WORD_LISTS = [
+  {
+    category: 'Animals',
+    words: ['CAT', 'DOG', 'BIRD', 'FISH', 'LION', 'TIGER'],
+    grid: [
+      ['C', 'A', 'T', 'X', 'Y', 'Z'],
+      ['D', 'O', 'G', 'A', 'B', 'C'],
+      ['B', 'I', 'R', 'D', 'E', 'F'],
+      ['F', 'I', 'S', 'H', 'G', 'H'],
+      ['L', 'I', 'O', 'N', 'I', 'J'],
+      ['T', 'I', 'G', 'E', 'R', 'K']
+    ]
+  },
+  {
+    category: 'Colors',
+    words: ['RED', 'BLUE', 'GREEN', 'YELLOW', 'PINK', 'BLACK'],
+    grid: [
+      ['R', 'E', 'D', 'X', 'Y', 'Z'],
+      ['B', 'L', 'U', 'E', 'A', 'B'],
+      ['G', 'R', 'E', 'E', 'N', 'C'],
+      ['Y', 'E', 'L', 'L', 'O', 'W'],
+      ['P', 'I', 'N', 'K', 'D', 'E'],
+      ['B', 'L', 'A', 'C', 'K', 'F']
+    ]
+  },
+  {
+    category: 'Fruits',
+    words: ['APPLE', 'BANANA', 'ORANGE', 'GRAPE', 'MANGO', 'KIWI'],
+    grid: [
+      ['A', 'P', 'P', 'L', 'E', 'X'],
+      ['B', 'A', 'N', 'A', 'N', 'A'],
+      ['O', 'R', 'A', 'N', 'G', 'E'],
+      ['G', 'R', 'A', 'P', 'E', 'Y'],
+      ['M', 'A', 'N', 'G', 'O', 'Z'],
+      ['K', 'I', 'W', 'I', 'A', 'B']
+    ]
+  },
+  {
+    category: 'Sports',
+    words: ['FOOTBALL', 'BASKETBALL', 'TENNIS', 'SOCCER', 'SWIM', 'RUN'],
+    grid: [
+      ['F', 'O', 'O', 'T', 'B', 'A', 'L', 'L'],
+      ['B', 'A', 'S', 'K', 'E', 'T', 'B', 'A'],
+      ['T', 'E', 'N', 'N', 'I', 'S', 'L', 'L'],
+      ['S', 'O', 'C', 'C', 'E', 'R', 'X', 'Y'],
+      ['S', 'W', 'I', 'M', 'Z', 'A', 'B', 'C'],
+      ['R', 'U', 'N', 'D', 'E', 'F', 'G', 'H']
+    ]
+  },
+  {
+    category: 'School',
+    words: ['BOOK', 'PEN', 'PAPER', 'DESK', 'TEACHER', 'STUDENT'],
+    grid: [
+      ['B', 'O', 'O', 'K', 'X', 'Y'],
+      ['P', 'E', 'N', 'Z', 'A', 'B'],
+      ['P', 'A', 'P', 'E', 'R', 'C'],
+      ['D', 'E', 'S', 'K', 'D', 'E'],
+      ['T', 'E', 'A', 'C', 'H', 'E'],
+      ['S', 'T', 'U', 'D', 'E', 'N']
+    ]
+  }
 ];
 
+const GRID_SIZE = 8;
+
 const WordConnectGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelComplete }) => {
-  const [currentWordSet, setCurrentWordSet] = useState([]);
-  const [selectedLetters, setSelectedLetters] = useState([]);
+  const [grid, setGrid] = useState([]);
+  const [targetWords, setTargetWords] = useState([]);
   const [foundWords, setFoundWords] = useState([]);
+  const [selectedCells, setSelectedCells] = useState([]);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(60);
+  const [timeLeft, setTimeLeft] = useState(120);
   const [gameOver, setGameOver] = useState(false);
-  const [shuffledLetters, setShuffledLetters] = useState([]);
-  const [hint, setHint] = useState('');
-  const [animations, setAnimations] = useState([]);
+  const [category, setCategory] = useState('');
+  const [isSelecting, setIsSelecting] = useState(false);
 
-  const generateWordSet = useCallback(() => {
-    const wordSetIndex = (level - 1) % WORDS.length;
-    return WORDS[wordSetIndex];
-  }, [level]);
-
-  useEffect(() => {
-    if (!gameRunning || isPaused) return;
-
-    const wordSet = generateWordSet();
-    setCurrentWordSet(wordSet);
+  const generateGrid = useCallback(() => {
+    const wordSetIndex = (level - 1) % WORD_LISTS.length;
+    const wordData = WORD_LISTS[wordSetIndex];
+    
+    setCategory(wordData.category);
+    setTargetWords(wordData.words);
     setFoundWords([]);
-    setSelectedLetters([]);
+    setSelectedCells([]);
     setScore(0);
-    setTimeLeft(60);
+    setTimeLeft(120);
     setGameOver(false);
     onScoreChange(0);
 
-    // Create shuffled letters from all words
-    const allLetters = wordSet.join('').split('').filter(l => l !== ' ');
-    const shuffled = allLetters.sort(() => Math.random() - 0.5);
-    setShuffledLetters(shuffled);
+    // Create a larger grid and place words
+    const newGrid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(''));
+    
+    // Place words in grid (simplified - in real game, words would be placed algorithmically)
+    // For now, use the predefined grid or generate randomly
+    if (wordData.grid && wordData.grid.length > 0) {
+      for (let i = 0; i < Math.min(GRID_SIZE, wordData.grid.length); i++) {
+        for (let j = 0; j < Math.min(GRID_SIZE, wordData.grid[i].length); j++) {
+          newGrid[i][j] = wordData.grid[i][j];
+        }
+      }
+    } else {
+      // Fill with random letters
+      for (let i = 0; i < GRID_SIZE; i++) {
+        for (let j = 0; j < GRID_SIZE; j++) {
+          newGrid[i][j] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+        }
+      }
+    }
+    
+    setGrid(newGrid);
+  }, [level, onScoreChange]);
 
-    // Set hint
-    setHint(`Find ${wordSet.length} words related to a theme`);
-  }, [gameRunning, isPaused, level, generateWordSet, onScoreChange]);
+  useEffect(() => {
+    if (!gameRunning || isPaused) return;
+    generateGrid();
+  }, [gameRunning, isPaused, generateGrid]);
 
   useEffect(() => {
     if (!gameRunning || gameOver || isPaused) return;
@@ -67,185 +135,137 @@ const WordConnectGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLe
     return () => clearInterval(timer);
   }, [gameRunning, gameOver, isPaused]);
 
-  const handleLetterClick = (letter, index) => {
-    if (gameOver || isPaused || !gameRunning) return;
+  const getCellKey = (row, col) => `${row}-${col}`;
 
-    setSelectedLetters(prev => {
-      const newSelection = [...prev, { letter, index }];
+  const isAdjacent = (cell1, cell2) => {
+    const [r1, c1] = cell1.split('-').map(Number);
+    const [r2, c2] = cell2.split('-').map(Number);
+    return Math.abs(r1 - r2) <= 1 && Math.abs(c1 - c2) <= 1;
+  };
+
+  const handleCellMouseDown = (row, col) => {
+    if (gameOver || isPaused || !gameRunning) return;
+    setIsSelecting(true);
+    setSelectedCells([getCellKey(row, col)]);
+  };
+
+  const handleCellMouseEnter = (row, col) => {
+    if (!isSelecting || gameOver || isPaused || !gameRunning) return;
+    
+    const cellKey = getCellKey(row, col);
+    const lastCell = selectedCells[selectedCells.length - 1];
+    
+    if (!selectedCells.includes(cellKey) && lastCell && isAdjacent(cellKey, lastCell)) {
+      setSelectedCells(prev => [...prev, cellKey]);
+    }
+  };
+
+  const handleCellMouseUp = () => {
+    if (!isSelecting) return;
+    setIsSelecting(false);
+    
+    // Check if selected cells form a word
+    if (selectedCells.length >= 3) {
+      const word = selectedCells
+        .map(key => {
+          const [row, col] = key.split('-').map(Number);
+          return grid[row][col];
+        })
+        .join('');
       
-      // Check if selected letters form a word
-      const word = newSelection.map(s => s.letter).join('');
-      const foundWord = currentWordSet.find(w => w === word);
+      // Check if word matches any target word
+      const foundWord = targetWords.find(w => w === word || w === word.split('').reverse().join(''));
       
       if (foundWord && !foundWords.includes(foundWord)) {
-        // Word found!
         setFoundWords(prev => [...prev, foundWord]);
         setScore(prev => {
           const newScore = prev + 100 * level;
           onScoreChange(newScore);
           
-          // Check level completion
-          if (prev + 100 * level >= level * 400) {
+          // Check if all words found
+          if (prev + 100 * level >= targetWords.length * 100 * level) {
             onLevelComplete();
           }
           
           return newScore;
         });
-        
-        // Create success animation
-        setAnimations(prev => [...prev, {
-          id: Date.now(),
-          type: 'success',
-          text: `Found: ${foundWord}!`,
-          x: 400,
-          y: 300
-        }]);
-
-        // Remove used letters
-        const usedIndices = newSelection.map(s => s.index);
-        setShuffledLetters(prev => 
-          prev.filter((_, i) => !usedIndices.includes(i))
-        );
-        
-        return [];
-      } else if (newSelection.length > 10) {
-        // Too many letters, reset
-        setAnimations(prev => [...prev, {
-          id: Date.now(),
-          type: 'error',
-          text: 'Not a word!',
-          x: 400,
-          y: 300
-        }]);
-        return [];
       }
-      
-      return newSelection;
-    });
+    }
+    
+    setSelectedCells([]);
   };
-
-  const handleClear = () => {
-    setSelectedLetters([]);
-  };
-
-  const getSelectedWord = () => {
-    return selectedLetters.map(s => s.letter).join('');
-  };
-
-  useEffect(() => {
-    // Remove animations after they finish
-    const timer = setInterval(() => {
-      setAnimations(prev => prev.filter(a => Date.now() - a.id < 2000));
-    }, 100);
-
-    return () => clearInterval(timer);
-  }, []);
 
   const handleRetry = () => {
-    const wordSet = generateWordSet();
-    setCurrentWordSet(wordSet);
-    setFoundWords([]);
-    setSelectedLetters([]);
-    setScore(0);
-    setTimeLeft(60);
-    setGameOver(false);
-    onScoreChange(0);
-    
-    const allLetters = wordSet.join('').split('').filter(l => l !== ' ');
-    const shuffled = allLetters.sort(() => Math.random() - 0.5);
-    setShuffledLetters(shuffled);
+    generateGrid();
   };
 
   return (
     <div className="word-connect-game">
       <div className="word-stats">
+        <div className="stat">Category: {category}</div>
         <div className="stat">Score: {score}</div>
         <div className="stat">Level: {level}</div>
         <div className="stat">Time: {timeLeft}s</div>
-        <div className="stat">Found: {foundWords.length}/{currentWordSet.length}</div>
+        <div className="stat">Found: {foundWords.length}/{targetWords.length}</div>
       </div>
 
       {gameOver && (
         <div className="game-over-overlay">
-          <h2>{foundWords.length === currentWordSet.length ? '🎉 Perfect!' : '⏰ Time Up!'}</h2>
+          <h2>{foundWords.length === targetWords.length ? '🎉 Perfect!' : '⏰ Time Up!'}</h2>
           <p>Final Score: {score}</p>
-          <p>Words Found: {foundWords.length}/{currentWordSet.length}</p>
+          <p>Words Found: {foundWords.length}/{targetWords.length}</p>
           <button onClick={handleRetry} className="retry-btn">Retry</button>
         </div>
       )}
 
       <div className="word-game-container">
-        <div className="hint-box">
-          <p>{hint}</p>
-          <div className="found-words">
-            {foundWords.map((word, i) => (
-              <span key={i} className="found-word">{word}</span>
-            ))}
-          </div>
-        </div>
-
-        <div className="selected-word-display">
-          <div className="selected-letters">
-            {selectedLetters.map((sel, i) => (
-              <span key={i} className="selected-letter">{sel.letter}</span>
-            ))}
-          </div>
-          {selectedLetters.length > 0 && (
-            <button onClick={handleClear} className="clear-btn">Clear</button>
-          )}
-        </div>
-
-        <div className="letters-grid">
-          {shuffledLetters.map((letter, index) => {
-            const isSelected = selectedLetters.some(s => s.index === index);
-            return (
-              <button
-                key={index}
-                className={`letter-tile ${isSelected ? 'selected' : ''}`}
-                onClick={() => handleLetterClick(letter, index)}
-                disabled={isSelected || gameOver || isPaused}
-              >
-                {letter}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="target-words">
+        <div className="target-words-panel">
           <h3>Find these words:</h3>
           <div className="target-words-list">
-            {currentWordSet.map((word, i) => (
-              <div
+            {targetWords.map((word, i) => (
+              <span
                 key={i}
                 className={`target-word ${foundWords.includes(word) ? 'found' : ''}`}
               >
-                {foundWords.includes(word) ? '✓ ' : ''}{word}
-              </div>
+                {word}
+              </span>
             ))}
           </div>
         </div>
-      </div>
 
-      {/* Animations */}
-      {animations.map(anim => (
-        <div
-          key={anim.id}
-          className={`animation-popup ${anim.type}`}
-          style={{
-            left: anim.x,
-            top: anim.y
-          }}
+        <div 
+          className="word-grid"
+          onMouseUp={handleCellMouseUp}
+          onMouseLeave={handleCellMouseUp}
         >
-          {anim.text}
+          {grid.map((row, rowIndex) => (
+            <div key={rowIndex} className="grid-row">
+              {row.map((cell, colIndex) => {
+                const cellKey = getCellKey(rowIndex, colIndex);
+                const isSelected = selectedCells.includes(cellKey);
+                const isLastSelected = selectedCells[selectedCells.length - 1] === cellKey;
+                
+                return (
+                  <div
+                    key={colIndex}
+                    className={`grid-cell ${isSelected ? 'selected' : ''} ${isLastSelected ? 'last-selected' : ''}`}
+                    onMouseDown={() => handleCellMouseDown(rowIndex, colIndex)}
+                    onMouseEnter={() => handleCellMouseEnter(rowIndex, colIndex)}
+                  >
+                    {cell}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </div>
-      ))}
 
-      <div className="controls-hint">
-        <p>Click letters to form words. Find all words to complete the level!</p>
+        <div className="instructions">
+          <p>Click and drag to select words horizontally, vertically, or diagonally!</p>
+        </div>
       </div>
     </div>
   );
 };
 
 export default WordConnectGame;
-

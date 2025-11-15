@@ -324,6 +324,62 @@
   background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
 }
 
+.setup-overlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 40px;
+  border-radius: 15px;
+  text-align: center;
+  z-index: 1000;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  min-width: 400px;
+}
+
+.setup-overlay h2 {
+  margin: 0 0 20px 0;
+  color: #2c3e50;
+  font-size: 28px;
+}
+
+.setup-overlay p {
+  margin: 0 0 30px 0;
+  color: #555;
+  font-size: 18px;
+}
+
+.bot-selection {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.bot-btn {
+  padding: 15px 30px;
+  font-size: 18px;
+  border: 3px solid #3498db;
+  background: white;
+  color: #3498db;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: bold;
+}
+
+.bot-btn:hover {
+  background: #ecf0f1;
+  transform: scale(1.05);
+}
+
+.bot-btn.selected {
+  background: #3498db;
+  color: white;
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+}
+
 .controls-hint {
   margin-top: 20px;
   color: rgba(255, 255, 255, 0.9);

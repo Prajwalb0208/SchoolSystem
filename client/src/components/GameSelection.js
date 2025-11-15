@@ -72,14 +72,6 @@ const GameSelection = () => {
       difficulty: 'Hard'
     },
     {
-      id: 'wordconnect',
-      name: 'Word Connect',
-      icon: '🔤',
-      description: 'Connect letters to form words! Find all words to complete the level.',
-      color: '#667eea',
-      difficulty: 'Easy'
-    },
-    {
       id: 'monopoly',
       name: 'Monopoly',
       icon: '🏰',

@@ -13,7 +13,6 @@ import Game2048 from './games/Game2048';
 import SudokuGame from './games/SudokuGame';
 import CarRacingGame from './games/CarRacingGame';
 import StumbleGuysGame from './games/StumbleGuysGame';
-import WordConnectGame from './games/WordConnectGame';
 import MonopolyGame from './games/MonopolyGame';
 import './Game.css';
 
@@ -142,11 +141,18 @@ const Game = () => {
     }
   };
 
-  const handleRetry = () => {
+  const handleRetry = async () => {
     setShowQuiz(false);
     setQuizData(null);
     setQuizPassed(false);
-    handleTimeUp();
+    // Reset timer and allow quiz to be fetched again
+    setGameTime(gameTimeLimit);
+    setProgress(0);
+    setIsPaused(false);
+    setGameRunning(true);
+    startTimeRef.current = Date.now();
+    // Fetch quiz again
+    await handleTimeUp();
   };
 
   const handlePause = () => {
@@ -242,8 +248,6 @@ const Game = () => {
         return <CarRacingGame {...gameProps} />;
       case 'stumbleguys':
         return <StumbleGuysGame {...gameProps} />;
-      case 'wordconnect':
-        return <WordConnectGame {...gameProps} />;
       case 'monopoly':
         return <MonopolyGame {...gameProps} />;
       default:
@@ -260,7 +264,6 @@ const Game = () => {
     sudoku: 'Sudoku',
     carracing: 'Car Racing',
     stumbleguys: 'Stumble Guys',
-    wordconnect: 'Word Connect',
     monopoly: 'Monopoly'
   };
 

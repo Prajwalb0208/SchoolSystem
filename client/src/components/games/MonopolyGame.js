@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import { useAuth } from '../../context/AuthContext';
 import './MonopolyGame.css';
 
 const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
 
-const BOARD_SIZE = 40;
 const PROPERTIES = [
   { name: 'GO', type: 'special', color: '#8B4513' },
   { name: 'Mediterranean Ave', type: 'property', color: '#8B4513', price: 60, rent: 2 },
@@ -49,17 +48,14 @@ const PROPERTIES = [
   { name: 'Boardwalk', type: 'property', color: '#0000FF', price: 400, rent: 50 }
 ];
 
-const PLAYER_COLORS = ['#FF4444', '#44FF44', '#4444FF', '#FFFF44', '#FF44FF', '#44FFFF'];
-
 const MonopolyGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelComplete }) => {
   const { user } = useAuth();
   const [socket, setSocket] = useState(null);
   const [players, setPlayers] = useState([]);
   const [currentPlayer, setCurrentPlayer] = useState(null);
-  const [gameState, setGameState] = useState('waiting'); // waiting, playing, finished
+  const [gameState, setGameState] = useState('setup'); // setup, waiting, playing, finished
   const [dice, setDice] = useState([1, 1]);
   const [myPlayer, setMyPlayer] = useState(null);
-  const [properties, setProperties] = useState({});
   const [money, setMoney] = useState(1500);
   const [position, setPosition] = useState(0);
   const [canRoll, setCanRoll] = useState(false);
@@ -67,6 +63,7 @@ const MonopolyGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevel
   const [showPropertyModal, setShowPropertyModal] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [score, setScore] = useState(0);
+  const [numBots, setNumBots] = useState(3); // Default 3 bots (4 players total)
 
   useEffect(() => {
     if (!gameRunning || isPaused) return;
@@ -77,11 +74,7 @@ const MonopolyGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevel
 
     newSocket.on('connect', () => {
       console.log('Connected to Monopoly game');
-      newSocket.emit('join-monopoly', {
-        studentId: user?.id || 'guest',
-        studentName: user?.name || user?.username || 'Player',
-        studentUSN: user?.usn || 'GUEST'
-      });
+      // Don't join yet, wait for bot selection
     });
 
     newSocket.on('monopoly-state', (state) => {
@@ -94,7 +87,6 @@ const MonopolyGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevel
         setCurrentPlayer(null);
       }
       setGameState(state.gameState || 'waiting');
-      setProperties(state.properties || {});
       
       const myPlayerData = state.players?.find(p => 
         (p.id && (p.id === (user?.id || 'guest'))) || 
@@ -162,6 +154,20 @@ const MonopolyGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevel
     };
   }, [gameRunning, isPaused, user, onScoreChange, onLevelComplete, money]);
 
+  const handleStartGame = () => {
+    if (!socket) return;
+    
+    // Join with specified number of bots
+    socket.emit('join-monopoly', {
+      studentId: user?.id || 'guest',
+      studentName: user?.name || user?.username || 'Player',
+      studentUSN: user?.usn || 'GUEST',
+      numBots: numBots
+    });
+    
+    setGameState('waiting');
+  };
+
   const rollDice = () => {
     if (!socket || !canRoll || gameState !== 'playing') return;
     
@@ -195,10 +201,6 @@ const MonopolyGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevel
     socket.emit('monopoly-start-game');
   };
 
-  const getPropertyAtPosition = (pos) => {
-    return PROPERTIES[pos] || PROPERTIES[0];
-  };
-
   const isMyTurn = currentPlayer && myPlayer && 
     ((currentPlayer.id && myPlayer.id && currentPlayer.id === myPlayer.id) || 
      (currentPlayer.usn && myPlayer.usn && currentPlayer.usn === myPlayer.usn));
@@ -212,17 +214,36 @@ const MonopolyGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevel
         <div className="stat">Players: {players.length}</div>
       </div>
 
+      {gameState === 'setup' && (
+        <div className="setup-overlay">
+          <h2>Monopoly Setup</h2>
+          <p>Select number of bots to play against:</p>
+          <div className="bot-selection">
+            {[1, 2, 3, 4].map(num => (
+              <button
+                key={num}
+                className={`bot-btn ${numBots === num ? 'selected' : ''}`}
+                onClick={() => setNumBots(num)}
+              >
+                {num} Bot{num !== 1 ? 's' : ''} ({num + 1} Total)
+              </button>
+            ))}
+          </div>
+          <button onClick={handleStartGame} className="start-btn">Start Game</button>
+        </div>
+      )}
+
       {gameState === 'waiting' && (
         <div className="waiting-overlay">
-          <h2>Waiting for Players...</h2>
-          <p>Players joined: {players.length}</p>
-          {players.length >= 2 && (
+          <h2>Setting up game...</h2>
+          <p>Players: {players.length}</p>
+          {players.length >= numBots + 1 && (
             <button onClick={startGame} className="start-btn">Start Game</button>
           )}
           <div className="players-list">
             {players.map((player, i) => (
               <div key={i} className="player-badge" style={{ background: player.color }}>
-                {player.name}
+                {player.name} {player.isBot ? '(Bot)' : ''}
               </div>
             ))}
           </div>
@@ -237,31 +258,25 @@ const MonopolyGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevel
               const side = Math.floor(index / 10);
               const positionOnSide = index % 10;
               
-              // Calculate position for square board layout
               let style = {
                 backgroundColor: property.color,
                 width: isCorner ? '80px' : '44px',
                 height: isCorner ? '80px' : '44px'
               };
               
-              // Position spaces around the board
               if (side === 0) {
-                // Bottom row (left to right)
                 style.position = 'absolute';
                 style.bottom = '0';
                 style.left = isCorner ? '0' : `${80 + (positionOnSide - 1) * 44}px`;
               } else if (side === 1) {
-                // Left column (bottom to top)
                 style.position = 'absolute';
                 style.left = '0';
                 style.bottom = isCorner ? '80px' : `${80 + (positionOnSide - 1) * 44}px`;
               } else if (side === 2) {
-                // Top row (right to left)
                 style.position = 'absolute';
                 style.top = '0';
                 style.left = isCorner ? '520px' : `${520 - (positionOnSide - 1) * 44}px`;
               } else if (side === 3) {
-                // Right column (top to bottom)
                 style.position = 'absolute';
                 style.right = '0';
                 style.top = isCorner ? '80px' : `${80 + (positionOnSide - 1) * 44}px`;
@@ -278,23 +293,23 @@ const MonopolyGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevel
                     <div className="space-price">${property.price}</div>
                   )}
                   
-          {/* Player tokens */}
-          {players.map((player, pIdx) => {
-            if (player && player.position === index) {
-              return (
-                <div
-                  key={pIdx}
-                  className="player-token"
-                  style={{ 
-                    backgroundColor: player.color || '#FF4444',
-                    top: `${2 + (pIdx % 2) * 14}px`,
-                    left: `${2 + Math.floor(pIdx / 2) * 14}px`
-                  }}
-                />
-              );
-            }
-            return null;
-          })}
+                  {/* Player tokens */}
+                  {players.map((player, pIdx) => {
+                    if (player && player.position === index) {
+                      return (
+                        <div
+                          key={pIdx}
+                          className="player-token"
+                          style={{ 
+                            backgroundColor: player.color || '#FF4444',
+                            top: `${2 + (pIdx % 2) * 14}px`,
+                            left: `${2 + Math.floor(pIdx / 2) * 14}px`
+                          }}
+                        />
+                      );
+                    }
+                    return null;
+                  })}
                 </div>
               );
             })}
@@ -319,6 +334,7 @@ const MonopolyGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevel
             {currentPlayer && (
               <div>
                 <strong>Current Player:</strong> {currentPlayer.name}
+                {currentPlayer.isBot && ' (Bot)'}
                 {isMyTurn && <span className="your-turn"> (Your Turn!)</span>}
               </div>
             )}
@@ -366,4 +382,3 @@ const MonopolyGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevel
 };
 
 export default MonopolyGame;
-

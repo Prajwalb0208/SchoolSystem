@@ -67,7 +67,7 @@ const ProgressTracking = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [API_URL]);
 
   const handleSearch = async (e) => {
     e.preventDefault();

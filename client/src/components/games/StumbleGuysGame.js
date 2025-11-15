@@ -7,47 +7,51 @@ const PLAYER_SIZE = 40;
 const GRAVITY = 0.8;
 const JUMP_STRENGTH = -15;
 const MOVE_SPEED = 5;
+const CAMERA_OFFSET = 200; // Camera follows player
 
 const StumbleGuysGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelComplete }) => {
   const [player, setPlayer] = useState({ x: 100, y: 100, vx: 0, vy: 0, onGround: false });
   const [obstacles, setObstacles] = useState([]);
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
-  const [finishLine, setFinishLine] = useState(GAME_WIDTH - 200);
+  const [distance, setDistance] = useState(0);
   const [particles, setParticles] = useState([]);
+  const [cameraX, setCameraX] = useState(0);
   const keysRef = useRef({ left: false, right: false, jump: false });
   const gameLoopRef = useRef(null);
+  const lastObstacleX = useRef(300);
+  const obstacleIdCounter = useRef(0);
 
   const generateObstacle = useCallback((x, type) => {
-    const types = ['spinner', 'hammer', 'barrier', 'movingPlatform'];
+    const types = ['spinner', 'hammer', 'barrier', 'movingPlatform', 'spikes', 'pendulum', 'rotatingBar'];
     const obstacleType = type || types[Math.floor(Math.random() * types.length)];
     
     switch (obstacleType) {
       case 'spinner':
         return {
-          id: Date.now() + Math.random(),
+          id: `obs-${obstacleIdCounter.current++}`,
           type: 'spinner',
           x,
           y: GAME_HEIGHT - 100,
           width: 60,
           height: 60,
           rotation: 0,
-          speed: 3
+          speed: 3 + level * 0.5
         };
       case 'hammer':
         return {
-          id: Date.now() + Math.random(),
+          id: `obs-${obstacleIdCounter.current++}`,
           type: 'hammer',
           x,
           y: GAME_HEIGHT - 150,
           width: 80,
           height: 100,
           angle: 0,
-          swingSpeed: 0.05
+          swingSpeed: 0.05 + level * 0.01
         };
       case 'barrier':
         return {
-          id: Date.now() + Math.random(),
+          id: `obs-${obstacleIdCounter.current++}`,
           type: 'barrier',
           x,
           y: GAME_HEIGHT - 80,
@@ -56,30 +60,68 @@ const StumbleGuysGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLe
         };
       case 'movingPlatform':
         return {
-          id: Date.now() + Math.random(),
+          id: `obs-${obstacleIdCounter.current++}`,
           type: 'movingPlatform',
           x,
           y: GAME_HEIGHT - 200,
           width: 120,
           height: 20,
-          vx: 2,
+          vx: 2 + level * 0.3,
           minX: x - 100,
           maxX: x + 100
+        };
+      case 'spikes':
+        return {
+          id: `obs-${obstacleIdCounter.current++}`,
+          type: 'spikes',
+          x,
+          y: GAME_HEIGHT - 40,
+          width: 150,
+          height: 40
+        };
+      case 'pendulum':
+        return {
+          id: `obs-${obstacleIdCounter.current++}`,
+          type: 'pendulum',
+          x,
+          y: GAME_HEIGHT - 200,
+          width: 20,
+          height: 100,
+          angle: Math.PI / 4,
+          swingSpeed: 0.03 + level * 0.005,
+          length: 100
+        };
+      case 'rotatingBar':
+        return {
+          id: `obs-${obstacleIdCounter.current++}`,
+          type: 'rotatingBar',
+          x,
+          y: GAME_HEIGHT - 150,
+          width: 200,
+          height: 20,
+          rotation: 0,
+          speed: 0.05 + level * 0.01
         };
       default:
         return null;
     }
-  }, []);
+  }, [level]);
 
   useEffect(() => {
+    if (!gameRunning || isPaused) return;
+    
     // Generate initial obstacles
     const initialObstacles = [];
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 15; i++) {
       const obstacle = generateObstacle(300 + i * 200);
-      if (obstacle) initialObstacles.push(obstacle);
+      if (obstacle) {
+        initialObstacles.push(obstacle);
+        lastObstacleX.current = obstacle.x;
+      }
     }
     setObstacles(initialObstacles);
-  }, [level, generateObstacle]);
+    obstacleIdCounter.current = 15;
+  }, [gameRunning, isPaused, level, generateObstacle]);
 
   useEffect(() => {
     if (!gameRunning || gameOver || isPaused) return;
@@ -131,14 +173,14 @@ const StumbleGuysGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLe
 
   const createParticles = (x, y) => {
     const newParticles = [];
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 12; i++) {
       newParticles.push({
-        id: Date.now() + i,
+        id: `particle-${Date.now()}-${i}`,
         x,
         y,
-        vx: (Math.random() - 0.5) * 8,
-        vy: (Math.random() - 0.5) * 8,
-        life: 20
+        vx: (Math.random() - 0.5) * 10,
+        vy: (Math.random() - 0.5) * 10,
+        life: 30
       });
     }
     setParticles(prev => [...prev, ...newParticles]);
@@ -160,7 +202,7 @@ const StumbleGuysGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLe
         // Horizontal movement
         if (keysRef.current.left && newPlayer.x > 0) {
           newPlayer.vx = -MOVE_SPEED;
-        } else if (keysRef.current.right && newPlayer.x < GAME_WIDTH - PLAYER_SIZE) {
+        } else if (keysRef.current.right) {
           newPlayer.vx = MOVE_SPEED;
         } else {
           newPlayer.vx *= 0.8; // Friction
@@ -189,53 +231,82 @@ const StumbleGuysGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLe
           newPlayer.onGround = false;
         }
 
-        // Wall collision
-        if (newPlayer.x < 0) newPlayer.x = 0;
-        if (newPlayer.x > GAME_WIDTH - PLAYER_SIZE) {
-          newPlayer.x = GAME_WIDTH - PLAYER_SIZE;
+        // Left boundary (camera follows player)
+        if (newPlayer.x < CAMERA_OFFSET) {
+          newPlayer.x = CAMERA_OFFSET;
         }
 
-        // Check finish line
-        if (newPlayer.x >= finishLine) {
-          setScore(s => {
-            const newScore = s + 100 * level;
-            onScoreChange(newScore);
-            if (newScore >= level * 500) {
-              onLevelComplete();
-            }
-            return newScore;
-          });
-          setFinishLine(prev => prev + GAME_WIDTH);
-        }
+        // Update distance and score
+        const newDistance = Math.max(distance, newPlayer.x - 100);
+        setDistance(newDistance);
+        setScore(prev => {
+          const newScore = Math.floor(newDistance / 10);
+          onScoreChange(newScore);
+          if (newScore > 0 && newScore % 500 === 0) {
+            onLevelComplete();
+          }
+          return newScore;
+        });
+
+        // Update camera to follow player
+        setCameraX(Math.max(0, newPlayer.x - CAMERA_OFFSET));
 
         return newPlayer;
       });
 
-      // Update obstacles
+      // Update obstacles and generate new ones
       setObstacles(prev => {
-        return prev.map(obs => {
-          const updated = { ...obs };
+        let updated = prev.map(obs => {
+          const obstacle = { ...obs };
 
-          if (obs.type === 'spinner') {
-            updated.rotation += obs.speed;
-          } else if (obs.type === 'hammer') {
-            updated.angle += obs.swingSpeed;
-            if (updated.angle > Math.PI * 2) updated.angle = 0;
-          } else if (obs.type === 'movingPlatform') {
-            updated.x += updated.vx;
-            if (updated.x <= updated.minX || updated.x >= updated.maxX) {
-              updated.vx *= -1;
+          if (obstacle.type === 'spinner') {
+            obstacle.rotation += obstacle.speed;
+          } else if (obstacle.type === 'hammer') {
+            obstacle.angle += obstacle.swingSpeed;
+            if (obstacle.angle > Math.PI * 2) obstacle.angle = 0;
+          } else if (obstacle.type === 'movingPlatform') {
+            obstacle.x += obstacle.vx;
+            if (obstacle.x <= obstacle.minX || obstacle.x >= obstacle.maxX) {
+              obstacle.vx *= -1;
             }
+          } else if (obstacle.type === 'pendulum') {
+            obstacle.angle += obstacle.swingSpeed;
+            if (obstacle.angle > Math.PI / 2 || obstacle.angle < -Math.PI / 2) {
+              obstacle.swingSpeed *= -1;
+            }
+          } else if (obstacle.type === 'rotatingBar') {
+            obstacle.rotation += obstacle.speed;
           }
 
           // Check collision with player
-          if (checkCollision(player, updated)) {
+          if (checkCollision(player, obstacle)) {
             createParticles(player.x, player.y);
             setGameOver(true);
           }
 
-          return updated;
+          return obstacle;
         });
+
+        // Remove obstacles that are far behind camera
+        updated = updated.filter(obs => obs.x + obs.width > cameraX - 200);
+
+        // Generate new obstacles ahead
+        const playerX = player.x;
+        const furthestObstacleX = updated.length > 0 
+          ? Math.max(...updated.map(o => o.x))
+          : lastObstacleX.current;
+
+        while (furthestObstacleX < playerX + GAME_WIDTH + 500) {
+          const newX = furthestObstacleX + 150 + Math.random() * 200;
+          const newObstacle = generateObstacle(newX);
+          if (newObstacle) {
+            updated.push(newObstacle);
+            lastObstacleX.current = newX;
+          }
+          break; // Add one at a time
+        }
+
+        return updated;
       });
 
       // Update particles
@@ -260,14 +331,17 @@ const StumbleGuysGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLe
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [gameRunning, gameOver, isPaused, level, finishLine, player, onScoreChange, onLevelComplete]);
+  }, [gameRunning, gameOver, isPaused, level, player, distance, cameraX, onScoreChange, onLevelComplete, generateObstacle]);
 
   const handleRetry = () => {
     setPlayer({ x: 100, y: 100, vx: 0, vy: 0, onGround: false });
     setScore(0);
+    setDistance(0);
     setGameOver(false);
-    setFinishLine(GAME_WIDTH - 200);
+    setCameraX(0);
     setParticles([]);
+    lastObstacleX.current = 300;
+    obstacleIdCounter.current = 0;
     onScoreChange(0);
   };
 
@@ -276,151 +350,226 @@ const StumbleGuysGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLe
       <div className="stumble-stats">
         <div className="stat">Score: {score}</div>
         <div className="stat">Level: {level}</div>
-        <div className="stat">Distance: {Math.floor(player.x)}m</div>
+        <div className="stat">Distance: {Math.floor(distance)}m</div>
       </div>
 
       {gameOver && (
         <div className="game-over-overlay">
           <h2>💥 Eliminated!</h2>
           <p>Final Score: {score}</p>
-          <p>Distance: {Math.floor(player.x)}m</p>
+          <p>Distance: {Math.floor(distance)}m</p>
           <button onClick={handleRetry} className="retry-btn">Retry</button>
         </div>
       )}
 
-      <div className="game-area" style={{ width: GAME_WIDTH, height: GAME_HEIGHT }}>
-        {/* Ground */}
-        <div className="ground" style={{ top: GAME_HEIGHT - 50 }} />
-
-        {/* Finish line */}
-        <div
-          className="finish-line"
-          style={{
-            left: finishLine,
-            top: 0,
-            height: GAME_HEIGHT
+      <div className="game-area" style={{ width: GAME_WIDTH, height: GAME_HEIGHT, overflow: 'hidden' }}>
+        <div 
+          className="game-world" 
+          style={{ 
+            transform: `translateX(-${cameraX}px)`,
+            width: '10000px',
+            position: 'relative'
           }}
         >
-          <div className="finish-flag">🏁</div>
-        </div>
+          {/* Ground - continuous */}
+          <div className="ground" style={{ top: GAME_HEIGHT - 50, width: '10000px' }} />
 
-        {/* Obstacles */}
-        {obstacles.map(obs => {
-          if (obs.type === 'spinner') {
-            return (
-              <div
-                key={obs.id}
-                className="obstacle spinner"
-                style={{
-                  left: obs.x,
-                  top: obs.y,
-                  width: obs.width,
-                  height: obs.height,
-                  transform: `rotate(${obs.rotation}deg)`
-                }}
-              >
-                <div className="spinner-blade"></div>
-                <div className="spinner-blade"></div>
-                <div className="spinner-blade"></div>
-                <div className="spinner-blade"></div>
-              </div>
-            );
-          } else if (obs.type === 'hammer') {
-            const hammerX = obs.x + obs.width / 2;
-            const hammerY = obs.y;
-            const handleLength = 60;
-            const headRadius = 20;
-            const angle = obs.angle;
-            const headX = hammerX + Math.cos(angle) * handleLength;
-            const headY = hammerY + Math.sin(angle) * handleLength;
+          {/* Finish lines every 500px */}
+          {Array.from({ length: 20 }).map((_, i) => (
+            <div
+              key={`finish-${i}`}
+              className="finish-line"
+              style={{
+                left: 500 + i * 500,
+                top: 0,
+                height: GAME_HEIGHT
+              }}
+            >
+              <div className="finish-flag">🏁</div>
+            </div>
+          ))}
 
-            return (
-              <div key={obs.id} className="obstacle-container">
+          {/* Obstacles */}
+          {obstacles.map(obs => {
+            if (obs.type === 'spinner') {
+              return (
                 <div
-                  className="hammer-handle"
+                  key={obs.id}
+                  className="obstacle spinner"
                   style={{
-                    left: hammerX,
-                    top: hammerY,
-                    transform: `rotate(${angle * (180 / Math.PI)}deg)`,
-                    transformOrigin: 'center top'
+                    left: obs.x,
+                    top: obs.y,
+                    width: obs.width,
+                    height: obs.height,
+                    transform: `rotate(${obs.rotation}deg)`
+                  }}
+                >
+                  <div className="spinner-blade"></div>
+                  <div className="spinner-blade"></div>
+                  <div className="spinner-blade"></div>
+                  <div className="spinner-blade"></div>
+                </div>
+              );
+            } else if (obs.type === 'hammer') {
+              const hammerX = obs.x + obs.width / 2;
+              const hammerY = obs.y;
+              const handleLength = 60;
+              const headRadius = 20;
+              const angle = obs.angle;
+              const headX = hammerX + Math.cos(angle) * handleLength;
+              const headY = hammerY + Math.sin(angle) * handleLength;
+
+              return (
+                <div key={obs.id} className="obstacle-container">
+                  <div
+                    className="hammer-handle"
+                    style={{
+                      left: hammerX,
+                      top: hammerY,
+                      transform: `rotate(${angle * (180 / Math.PI)}deg)`,
+                      transformOrigin: 'center top'
+                    }}
+                  />
+                  <div
+                    className="hammer-head"
+                    style={{
+                      left: headX - headRadius,
+                      top: headY - headRadius,
+                      width: headRadius * 2,
+                      height: headRadius * 2
+                    }}
+                  />
+                </div>
+              );
+            } else if (obs.type === 'barrier') {
+              return (
+                <div
+                  key={obs.id}
+                  className="obstacle barrier"
+                  style={{
+                    left: obs.x,
+                    top: obs.y,
+                    width: obs.width,
+                    height: obs.height
                   }}
                 />
+              );
+            } else if (obs.type === 'movingPlatform') {
+              return (
                 <div
-                  className="hammer-head"
+                  key={obs.id}
+                  className="obstacle platform"
                   style={{
-                    left: headX - headRadius,
-                    top: headY - headRadius,
-                    width: headRadius * 2,
-                    height: headRadius * 2
+                    left: obs.x,
+                    top: obs.y,
+                    width: obs.width,
+                    height: obs.height
                   }}
                 />
-              </div>
-            );
-          } else if (obs.type === 'barrier') {
-            return (
-              <div
-                key={obs.id}
-                className="obstacle barrier"
-                style={{
-                  left: obs.x,
-                  top: obs.y,
-                  width: obs.width,
-                  height: obs.height
-                }}
-              />
-            );
-          } else if (obs.type === 'movingPlatform') {
-            return (
-              <div
-                key={obs.id}
-                className="obstacle platform"
-                style={{
-                  left: obs.x,
-                  top: obs.y,
-                  width: obs.width,
-                  height: obs.height
-                }}
-              />
-            );
-          }
-          return null;
-        })}
+              );
+            } else if (obs.type === 'spikes') {
+              return (
+                <div
+                  key={obs.id}
+                  className="obstacle spikes"
+                  style={{
+                    left: obs.x,
+                    top: obs.y,
+                    width: obs.width,
+                    height: obs.height
+                  }}
+                >
+                  <div className="spike"></div>
+                  <div className="spike"></div>
+                  <div className="spike"></div>
+                  <div className="spike"></div>
+                  <div className="spike"></div>
+                </div>
+              );
+            } else if (obs.type === 'pendulum') {
+              const pendulumX = obs.x + obs.width / 2;
+              const ballX = pendulumX + Math.sin(obs.angle) * obs.length;
+              const ballY = obs.y + Math.cos(obs.angle) * obs.length;
 
-        {/* Player */}
-        <div
-          className="player-character"
-          style={{
-            left: player.x,
-            top: player.y,
-            width: PLAYER_SIZE,
-            height: PLAYER_SIZE
-          }}
-        >
-          <div className="character-body">
-            <div className="character-face">😊</div>
-          </div>
-        </div>
+              return (
+                <div key={obs.id} className="obstacle-container">
+                  <div
+                    className="pendulum-rope"
+                    style={{
+                      left: pendulumX,
+                      top: obs.y,
+                      width: 2,
+                      height: obs.length,
+                      transform: `rotate(${obs.angle * (180 / Math.PI)}deg)`,
+                      transformOrigin: 'top center'
+                    }}
+                  />
+                  <div
+                    className="pendulum-ball"
+                    style={{
+                      left: ballX - 15,
+                      top: ballY - 15,
+                      width: 30,
+                      height: 30
+                    }}
+                  />
+                </div>
+              );
+            } else if (obs.type === 'rotatingBar') {
+              return (
+                <div
+                  key={obs.id}
+                  className="obstacle rotating-bar"
+                  style={{
+                    left: obs.x,
+                    top: obs.y,
+                    width: obs.width,
+                    height: obs.height,
+                    transform: `rotate(${obs.rotation}deg)`,
+                    transformOrigin: 'center center'
+                  }}
+                />
+              );
+            }
+            return null;
+          })}
 
-        {/* Particles */}
-        {particles.map(p => (
+          {/* Player */}
           <div
-            key={p.id}
-            className="particle"
+            className="player-character"
             style={{
-              left: p.x,
-              top: p.y,
-              opacity: p.life / 20
+              left: player.x,
+              top: player.y,
+              width: PLAYER_SIZE,
+              height: PLAYER_SIZE
             }}
-          />
-        ))}
+          >
+            <div className="character-body">
+              <div className="character-face">😊</div>
+            </div>
+          </div>
+
+          {/* Particles */}
+          {particles.map(p => (
+            <div
+              key={p.id}
+              className="particle"
+              style={{
+                left: p.x,
+                top: p.y,
+                opacity: p.life / 30
+              }}
+            />
+          ))}
+        </div>
       </div>
 
       <div className="controls-hint">
         <p>← → Arrow Keys or A/D to move | Space or W to jump</p>
+        <p>Run as far as you can! Avoid obstacles!</p>
       </div>
     </div>
   );
 };
 
 export default StumbleGuysGame;
-

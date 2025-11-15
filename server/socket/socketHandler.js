@@ -140,7 +140,7 @@ export default (io) => {
     // Monopoly game handlers
     const monopolyRooms = new Map(); // Store game state per room
 
-    socket.on('join-monopoly', ({ studentId, studentName, studentUSN }) => {
+    socket.on('join-monopoly', ({ studentId, studentName, studentUSN, numBots = 3 }) => {
       const roomName = 'monopoly-game';
       socket.join(roomName);
 
@@ -223,9 +223,31 @@ export default (io) => {
           position: 0,
           money: 1500,
           properties: [],
-          canRoll: false
+          canRoll: false,
+          isBot: false
         };
         gameState.players.push(newPlayer);
+      }
+
+      // Add bots based on numBots parameter (1-4 bots, so 1-4 total players)
+      const botNames = ['Bot Alice', 'Bot Bob', 'Bot Charlie', 'Bot David'];
+      const totalPlayers = numBots + 1; // Player + bots
+      while (gameState.players.length < totalPlayers) {
+        const playerColors = ['#FF4444', '#44FF44', '#4444FF', '#FFFF44', '#FF44FF', '#44FFFF'];
+        const botIndex = gameState.players.length - 1;
+        const botName = botNames[botIndex] || `Bot ${botIndex + 1}`;
+        const bot = {
+          id: `bot-${botIndex}`,
+          name: botName,
+          usn: `BOT${botIndex}`,
+          color: playerColors[gameState.players.length % playerColors.length],
+          position: 0,
+          money: 1500,
+          properties: [],
+          canRoll: false,
+          isBot: true
+        };
+        gameState.players.push(bot);
       }
 
       // Update all players
@@ -326,6 +348,40 @@ export default (io) => {
       }
 
       io.to(roomName).emit('monopoly-state', gameState);
+
+      // If current player is a bot, make bot play automatically
+      if (currentPlayer.isBot) {
+        setTimeout(() => {
+          // Bot decision: buy property if affordable and profitable
+          if (property && !property.owner && currentPlayer.money >= property.price) {
+            // Bot buys if property is cheap or has good rent
+            if (property.price < 200 || property.rent > 15) {
+              gameState.properties[propertyIndex].owner = currentPlayer.id;
+              currentPlayer.money -= property.price;
+              currentPlayer.properties.push(propertyIndex);
+            }
+          }
+          
+          // Bot passes turn after a delay
+          setTimeout(() => {
+            gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.turnOrder.length;
+            const nextPlayer = gameState.players[gameState.turnOrder[gameState.currentPlayerIndex]];
+            
+            gameState.players.forEach((player, index) => {
+              player.canRoll = (index === gameState.turnOrder[gameState.currentPlayerIndex] && gameState.gameState === 'playing');
+            });
+            
+            io.to(roomName).emit('monopoly-state', gameState);
+            
+            // If next player is also a bot, trigger their turn
+            if (nextPlayer.isBot && gameState.gameState === 'playing') {
+              setTimeout(() => {
+                socket.emit('monopoly-roll-dice', { studentId: nextPlayer.id });
+              }, 1000);
+            }
+          }, 1500);
+        }, 1000);
+      }
     });
 
     socket.on('monopoly-buy-property', ({ studentId, propertyIndex }) => {
@@ -363,10 +419,20 @@ export default (io) => {
 
       // Next player's turn
       gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.turnOrder.length;
+      const nextPlayer = gameState.players[gameState.turnOrder[gameState.currentPlayerIndex]];
       
       gameState.players.forEach((player, index) => {
-        player.canRoll = (index === gameState.turnOrder[gameState.currentPlayerIndex]);
+        player.canRoll = (index === gameState.turnOrder[gameState.currentPlayerIndex] && gameState.gameState === 'playing');
       });
+
+      io.to(roomName).emit('monopoly-state', gameState);
+
+      // If next player is a bot, trigger their turn automatically
+      if (nextPlayer.isBot && gameState.gameState === 'playing') {
+        setTimeout(() => {
+          socket.emit('monopoly-roll-dice', { studentId: nextPlayer.id });
+        }, 1000);
+      }
 
       // Check for winner (player with most money)
       const winner = gameState.players.reduce((max, p) => 
@@ -381,8 +447,6 @@ export default (io) => {
           winnerId: winner.id
         });
       }
-
-      io.to(roomName).emit('monopoly-state', gameState);
     });
 
     socket.on('disconnect', () => {

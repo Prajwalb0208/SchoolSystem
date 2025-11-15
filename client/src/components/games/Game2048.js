@@ -147,7 +147,7 @@ const Game2048 = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelComp
       })
     );
     if (!canMove) setGameOver(true);
-  }, [gameRunning, gameOver, isPaused, grid, score, won, onScoreChange, onLevelComplete]);
+  }, [gameRunning, gameOver, isPaused, grid, score, won, onScoreChange, onLevelComplete, TARGET_TILE, addRandomTile]);
 
   useEffect(() => {
     if (!gameRunning || gameOver || isPaused) return;
