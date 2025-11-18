@@ -24,22 +24,6 @@ const GameLevelsHome = () => {
 
   const games = [
     {
-      id: 'blockrush',
-      name: 'Block Rush',
-      icon: '🧱',
-      description: 'Classic Tetris-style game. Clear lines by arranging falling blocks.',
-      color: '#FF6B6B',
-      difficulty: 'Easy'
-    },
-    {
-      id: 'snake',
-      name: 'Snake Game',
-      icon: '🐍',
-      description: 'Control a snake, eat food, and grow longer. Avoid hitting walls or yourself!',
-      color: '#4ECDC4',
-      difficulty: 'Easy'
-    },
-    {
       id: 'memory',
       name: 'Memory Match',
       icon: '🧠',
@@ -80,12 +64,12 @@ const GameLevelsHome = () => {
       difficulty: 'Medium'
     },
     {
-      id: 'stumbleguys',
-      name: 'Stumble Guys',
-      icon: '🏃',
-      description: 'Navigate through obstacle courses! Jump, dodge, and reach the finish.',
-      color: '#FF6B9D',
-      difficulty: 'Hard'
+      id: 'sonic',
+      name: 'Sonic Runner',
+      icon: '💨',
+      description: 'Run as Sonic! Jump over enemies and collect rings in this endless runner.',
+      color: '#00FFFF',
+      difficulty: 'Medium'
     },
     {
       id: 'monopoly',

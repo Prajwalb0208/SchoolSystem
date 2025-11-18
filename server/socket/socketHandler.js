@@ -6,6 +6,11 @@ export default (io) => {
   io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
+    // Handle disconnection
+    socket.on('disconnect', () => {
+      console.log('User disconnected:', socket.id);
+    });
+
     // Join game room for a specific level
     socket.on('join-game', async ({ difficulty, level, studentId }) => {
       const roomName = `game-${difficulty}-${level}`;
@@ -140,7 +145,7 @@ export default (io) => {
     // Monopoly game handlers
     const monopolyRooms = new Map(); // Store game state per room
 
-    socket.on('join-monopoly', ({ studentId, studentName, studentUSN, numBots = 3 }) => {
+    socket.on('join-monopoly', ({ studentId, studentName, studentUSN, numBots = 0 }) => {
       const roomName = 'monopoly-game';
       socket.join(roomName);
 
@@ -229,25 +234,28 @@ export default (io) => {
         gameState.players.push(newPlayer);
       }
 
-      // Add bots based on numBots parameter (1-4 bots, so 1-4 total players)
-      const botNames = ['Bot Alice', 'Bot Bob', 'Bot Charlie', 'Bot David'];
-      const totalPlayers = numBots + 1; // Player + bots
-      while (gameState.players.length < totalPlayers) {
-        const playerColors = ['#FF4444', '#44FF44', '#4444FF', '#FFFF44', '#FF44FF', '#44FFFF'];
-        const botIndex = gameState.players.length - 1;
-        const botName = botNames[botIndex] || `Bot ${botIndex + 1}`;
-        const bot = {
-          id: `bot-${botIndex}`,
-          name: botName,
-          usn: `BOT${botIndex}`,
-          color: playerColors[gameState.players.length % playerColors.length],
-          position: 0,
-          money: 1500,
-          properties: [],
-          canRoll: false,
-          isBot: true
-        };
-        gameState.players.push(bot);
+      // Add bots based on numBots parameter (only if numBots > 0, for computer mode)
+      // For online mode (numBots = 0), wait for other players
+      if (numBots > 0) {
+        const botNames = ['Bot Alice', 'Bot Bob', 'Bot Charlie', 'Bot David'];
+        const totalPlayers = numBots + 1; // Player + bots
+        while (gameState.players.length < totalPlayers) {
+          const playerColors = ['#FF4444', '#44FF44', '#4444FF', '#FFFF44', '#FF44FF', '#44FFFF'];
+          const botIndex = gameState.players.length - 1;
+          const botName = botNames[botIndex] || `Bot ${botIndex + 1}`;
+          const bot = {
+            id: `bot-${botIndex}`,
+            name: botName,
+            usn: `BOT${botIndex}`,
+            color: playerColors[gameState.players.length % playerColors.length],
+            position: 0,
+            money: 1500,
+            properties: [],
+            canRoll: false,
+            isBot: true
+          };
+          gameState.players.push(bot);
+        }
       }
 
       // Update all players

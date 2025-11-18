@@ -5,6 +5,7 @@ import RoleSelection from './components/RoleSelection';
 import GameSelection from './components/GameSelection';
 import Game from './components/Game';
 import TeacherDashboard from './components/Teacher/TeacherDashboard';
+import StudentDashboard from './components/Student/StudentDashboard';
 import './App.css';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
             <Route path="/games" element={<GameSelection />} />
             <Route path="/game/:gameType" element={<Game />} />
             <Route path="/teacher/*" element={<TeacherDashboard />} />
+            <Route path="/student/*" element={<StudentDashboard />} />
           </Routes>
         </div>
       </Router>

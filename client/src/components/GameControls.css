@@ -32,6 +32,16 @@
   border-color: rgba(255, 193, 7, 0.6);
 }
 
+.pause-btn.resume-active {
+  background: rgba(76, 175, 80, 0.3);
+  border-color: rgba(76, 175, 80, 0.6);
+}
+
+.pause-btn.resume-active:hover {
+  background: rgba(76, 175, 80, 0.5);
+  border-color: rgba(76, 175, 80, 0.8);
+}
+
 .restart-btn:hover {
   background: rgba(33, 150, 243, 0.3);
   border-color: rgba(33, 150, 243, 0.6);

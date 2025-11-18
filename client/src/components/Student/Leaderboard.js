@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import io from 'socket.io-client';
@@ -7,6 +7,8 @@ import './Leaderboard.css';
 const Leaderboard = ({ difficulty, level }) => {
   const { user, API_URL } = useAuth();
   const [leaderboard, setLeaderboard] = useState(null);
+  const [socketConnected, setSocketConnected] = useState(false);
+  const socketRef = useRef(null);
 
   const fetchLeaderboard = async () => {
     try {
@@ -26,18 +28,65 @@ const Leaderboard = ({ difficulty, level }) => {
   useEffect(() => {
     fetchLeaderboard();
 
-    const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'https://schoolsystem-lyl7.onrender.com');
+    // Initialize socket connection
+    const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'https://schoolsystem-lyl7.onrender.com';
+    const newSocket = io(SOCKET_URL, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5
+    });
+
+    socketRef.current = newSocket;
+
+    // Handle connection events
+    newSocket.on('connect', () => {
+      console.log('Socket connected for leaderboard:', newSocket.id);
+      setSocketConnected(true);
+      
+      // Join the game room to receive leaderboard updates
+      newSocket.emit('join-game', {
+        difficulty: difficulty,
+        level: parseInt(level),
+        studentId: user?.id || null
+      });
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('Socket disconnected from leaderboard');
+      setSocketConnected(false);
+    });
+
+    newSocket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+      setSocketConnected(false);
+    });
+
+    // Listen for leaderboard updates
     newSocket.on('leaderboard-update', (data) => {
+      console.log('Leaderboard update received:', data);
       if (data.difficulty === difficulty && data.level === parseInt(level)) {
-        setLeaderboard(data);
+        // Update leaderboard with entries
+        setLeaderboard(prevLeaderboard => ({
+          difficulty: data.difficulty,
+          level: data.level,
+          entries: data.entries || prevLeaderboard?.entries || []
+        }));
       }
     });
 
     return () => {
-      newSocket.disconnect();
+      if (socketRef.current) {
+        socketRef.current.emit('leave-game', {
+          difficulty: difficulty,
+          level: parseInt(level)
+        });
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [difficulty, level]);
+  }, [difficulty, level, user?.id]);
 
   if (!leaderboard) {
     return <div className="leaderboard-container">Loading leaderboard...</div>;
@@ -52,9 +101,15 @@ const Leaderboard = ({ difficulty, level }) => {
 
   return (
     <div className="leaderboard-container">
-      <h3>Leaderboard - {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} Level {level}</h3>
-      {leaderboard.entries.length === 0 ? (
-        <p>No entries yet. Be the first!</p>
+      <div className="leaderboard-header">
+        <h3>Leaderboard - {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} Level {level}</h3>
+        <div className={`socket-status ${socketConnected ? 'connected' : 'disconnected'}`}>
+          <span className="status-dot"></span>
+          <span>{socketConnected ? 'Live Updates' : 'Connecting...'}</span>
+        </div>
+      </div>
+      {!leaderboard || leaderboard.entries.length === 0 ? (
+        <p className="no-entries">No entries yet. Be the first!</p>
       ) : (
         <div className="leaderboard-list">
           {leaderboard.entries.slice(0, 10).map((entry, index) => (

@@ -4,15 +4,14 @@ import axios from 'axios';
 import QuizPopup from './QuizPopup';
 import GameControls from './GameControls';
 import LevelComplete from './LevelComplete';
+import HowToPlay from './HowToPlay';
 import soundEffects from '../utils/soundEffects';
-import BlockRush from './games/BlockRush';
-import SnakeGame from './games/SnakeGame';
 import MemoryGame from './games/MemoryGame';
 import MinesweeperGame from './games/MinesweeperGame';
 import Game2048 from './games/Game2048';
-import SudokuGame from './games/SudokuGame';
-import CarRacingGame from './games/CarRacingGame';
-import StumbleGuysGame from './games/StumbleGuysGame';
+import SudokuGame from './games/SudokuGameNew';
+import InfiniteCarsGame from './games/InfiniteCarsGame';
+import SonicGame from './games/SonicGame';
 import MonopolyGame from './games/MonopolyGame';
 import './Game.css';
 
@@ -33,6 +32,7 @@ const Game = () => {
   const [progress, setProgress] = useState(0); // 0-100 for progress bar
   const [levelCompleted, setLevelCompleted] = useState(false);
   const [levelCompleteScore, setLevelCompleteScore] = useState(0);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
   const lastWarningTimeRef = useRef(0);
   const startTimeRef = useRef(Date.now());
 
@@ -160,10 +160,26 @@ const Game = () => {
     soundEffects.playClick();
   };
 
-  const handleResume = () => {
+  const handleResume = useCallback(() => {
     setIsPaused(false);
     soundEffects.playClick();
-  };
+  }, []);
+
+  // Handle spacebar for resume
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      // Only handle spacebar if game is paused and not in quiz
+      if (e.code === 'Space' && isPaused && !showQuiz) {
+        e.preventDefault();
+        handleResume();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [isPaused, showQuiz, handleResume]);
 
   const handleRestart = () => {
     if (window.confirm('Are you sure you want to restart? All progress will be lost.')) {
@@ -172,9 +188,11 @@ const Game = () => {
       setIsPaused(false);
       setShowQuiz(false);
       setQuizData(null);
+      setQuizPassed(false);
       setGameScore(0);
       setProgress(0);
       setCurrentLevel(1);
+      setLevelCompleted(false);
       startTimeRef.current = Date.now();
       soundEffects.playClick();
     }
@@ -232,10 +250,6 @@ const Game = () => {
     };
     
     switch(gameType) {
-      case 'blockrush':
-        return <BlockRush {...gameProps} />;
-      case 'snake':
-        return <SnakeGame {...gameProps} />;
       case 'memory':
         return <MemoryGame {...gameProps} />;
       case 'minesweeper':
@@ -245,57 +259,73 @@ const Game = () => {
       case 'sudoku':
         return <SudokuGame {...gameProps} />;
       case 'carracing':
-        return <CarRacingGame {...gameProps} />;
-      case 'stumbleguys':
-        return <StumbleGuysGame {...gameProps} />;
+        return <InfiniteCarsGame {...gameProps} />;
+      case 'sonic':
+        return <SonicGame {...gameProps} />;
       case 'monopoly':
         return <MonopolyGame {...gameProps} />;
       default:
-        return <div>Game not found</div>;
+        return <div>Game not found: {gameType}</div>;
     }
   };
 
   const gameNames = {
-    blockrush: 'Block Rush',
-    snake: 'Snake Game',
     memory: 'Memory Match',
     minesweeper: 'Minesweeper',
     2048: '2048 Game',
     sudoku: 'Sudoku',
-    carracing: 'Car Racing',
-    stumbleguys: 'Stumble Guys',
+    carracing: 'Infinite Cars',
+    sonic: 'Sonic Runner',
     monopoly: 'Monopoly'
   };
 
   return (
     <div className="game-container">
-      <div className="game-header">
-        <h1>🎮 {gameNames[gameType] || 'Game'}</h1>
-        <div className="game-stats">
-          <div className="stat-item">
-            <span className="stat-label">Score</span>
-            <span className="stat-value">{gameScore}</span>
+      {/* Top Header - Title and How to Play */}
+      <div className="game-top-header">
+        <h1 className="game-title">🎮 {gameNames[gameType] || 'Game'}</h1>
+        <button 
+          className="how-to-play-btn"
+          onClick={() => setShowHowToPlay(true)}
+          title="How to Play"
+        >
+          ❓ How to Play
+        </button>
+      </div>
+
+      {/* Game Area with Side Stats */}
+      <div className="game-layout-wrapper">
+        {/* Left Side - Score */}
+        <div className="game-side-stats left-stats">
+          <div className="side-stat-card">
+            <div className="side-stat-label">SCORE</div>
+            <div className="side-stat-value">{gameScore}</div>
           </div>
-          <div className="stat-item">
-            <span className="stat-label">Level</span>
-            <span className="stat-value">{currentLevel}/5</span>
+          <div className="side-stat-card">
+            <div className="side-stat-label">LEVEL</div>
+            <div className="side-stat-value">{currentLevel}/5</div>
           </div>
         </div>
-        <div className={`timer ${gameTime < 60 ? 'warning' : ''}`}>
-          Time: {formatTime(gameTime)}
+
+        {/* Center - Game Content */}
+        <div className="game-content-wrapper">
+          <div className="game-content">
+            {gameRunning && !showQuiz && !isPaused ? (
+              renderGame()
+            ) : null}
+          </div>
+        </div>
+
+        {/* Right Side - Time */}
+        <div className="game-side-stats right-stats">
+          <div className={`side-stat-card timer-card ${gameTime < 60 ? 'warning' : ''}`}>
+            <div className="side-stat-label">TIME</div>
+            <div className="side-stat-value timer-value">{formatTime(gameTime)}</div>
+          </div>
         </div>
       </div>
 
-      <div className="progress-bar-container">
-        <div className="progress-bar-label">Progress: {Math.round(progress)}%</div>
-        <div className="progress-bar">
-          <div 
-            className="progress-bar-fill" 
-            style={{ width: `${progress}%` }}
-          ></div>
-        </div>
-      </div>
-
+      {/* Controls */}
       <GameControls
         isPaused={isPaused}
         onPause={handlePause}
@@ -307,7 +337,7 @@ const Game = () => {
       {isPaused && !showQuiz && (
         <div className="pause-overlay">
           <h2>⏸️ Game Paused</h2>
-          <p>{quizPassed ? 'Quiz completed! Click Resume to continue playing at the same level.' : 'Click Resume to continue playing'}</p>
+          <p>{quizPassed ? 'Quiz completed! Press SPACEBAR or click Resume to continue playing at the same level.' : 'Press SPACEBAR or click Resume to continue playing'}</p>
           {quizPassed && (
             <div className="current-stats" style={{ marginTop: '20px' }}>
               <div className="stat-box">
@@ -322,27 +352,6 @@ const Game = () => {
           )}
         </div>
       )}
-
-      <div className="game-content">
-        {gameRunning && !showQuiz ? (
-          renderGame()
-        ) : (
-          <div className="game-paused">
-            <h2>⏸️ Game Paused</h2>
-            <p>Complete the quiz to continue playing</p>
-            <div className="current-stats">
-              <div className="stat-box">
-                <span className="stat-label">Current Score</span>
-                <span className="stat-value-large">{gameScore}</span>
-              </div>
-              <div className="stat-box">
-                <span className="stat-label">Current Level</span>
-                <span className="stat-value-large">{currentLevel}</span>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
 
       {showQuiz && quizData && (
         <QuizPopup
@@ -359,6 +368,13 @@ const Game = () => {
           score={levelCompleteScore}
           onNextLevel={handleNextLevel}
           onContinue={handleContinueCurrentLevel}
+        />
+      )}
+
+      {showHowToPlay && (
+        <HowToPlay 
+          gameType={gameType} 
+          onClose={() => setShowHowToPlay(false)} 
         />
       )}
     </div>

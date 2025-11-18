@@ -12,8 +12,17 @@
   animation: fadeInUp 0.5s ease-out;
 }
 
+.leaderboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
 .leaderboard-container h3 {
-  margin: 0 0 30px 0;
+  margin: 0;
   text-align: center;
   background: var(--bg-gradient);
   -webkit-background-clip: text;
@@ -23,6 +32,7 @@
   font-weight: 800;
   position: relative;
   padding-bottom: 15px;
+  flex: 1;
 }
 
 .leaderboard-container h3::after {
@@ -37,10 +47,74 @@
   border-radius: 2px;
 }
 
+.socket-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.socket-status.connected {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+}
+
+.socket-status.disconnected {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 2s infinite;
+}
+
+.socket-status.connected .status-dot {
+  background: #16a34a;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
+}
+
+.socket-status.disconnected .status-dot {
+  background: #dc2626;
+  animation: none;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+.no-entries {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+  font-size: 16px;
+  font-weight: 500;
+}
+
 .leaderboard-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  width: 100%;
+}
+
+.leaderboard-list > * {
+  width: 100%;
 }
 
 .leaderboard-entry {
@@ -53,6 +127,8 @@
   border: 2px solid transparent;
   position: relative;
   overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .leaderboard-entry::before {
@@ -171,9 +247,16 @@
     padding: 20px;
   }
 
+  .leaderboard-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
   .leaderboard-entry {
     padding: 15px;
     flex-wrap: wrap;
+    width: 100%;
   }
 
   .rank {
@@ -184,5 +267,10 @@
   .student-info {
     flex: 1 1 100%;
     margin-top: 10px;
+  }
+
+  .socket-status {
+    font-size: 12px;
+    padding: 6px 12px;
   }
 }

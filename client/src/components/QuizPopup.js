@@ -66,8 +66,9 @@ const QuizPopup = ({ quiz, onComplete, onRetry, passed }) => {
 
   const handleSubmitQuiz = async () => {
     const allAnswered = quiz.questions.every(q => answers[q._id] !== undefined && answers[q._id] !== null);
+    const totalQuestions = quiz.totalQuestions || quiz.questions.length;
     if (!allAnswered) {
-      alert('Please answer all 5 questions before submitting.');
+      alert(`Please answer all ${totalQuestions} questions before submitting.`);
       soundEffects.playError();
       return;
     }
@@ -117,12 +118,14 @@ const QuizPopup = ({ quiz, onComplete, onRetry, passed }) => {
       });
       
       const correctCount = questionResults.filter(r => r.isCorrect).length;
-      const passed = correctCount >= 3;
+      const totalQuestions = quiz.totalQuestions || quiz.questions.length;
+      const passingScore = quiz.passingScore || Math.ceil(totalQuestions * 0.6);
+      const passed = correctCount >= passingScore;
       setResult({
         passed,
         correctAnswers: correctCount,
-        totalQuestions: 5,
-        score: correctCount * 20,
+        totalQuestions: totalQuestions,
+        score: Math.round((correctCount / totalQuestions) * 100),
         answers: questionResults
       });
       setShowReview(true);
@@ -210,7 +213,7 @@ const QuizPopup = ({ quiz, onComplete, onRetry, passed }) => {
           <p className="result-message">
             {result.passed 
               ? 'Great job! You can continue playing.' 
-              : 'You need at least 3 correct answers to continue. Try again!'}
+              : `You need at least ${quiz.passingScore || Math.ceil((quiz.totalQuestions || quiz.questions.length) * 0.6)} correct answers to continue. Try again!`}
           </p>
           
           <div className="quiz-actions">
@@ -241,7 +244,7 @@ const QuizPopup = ({ quiz, onComplete, onRetry, passed }) => {
       <div className="quiz-popup">
         <div className="quiz-header">
           <h2>⏱️ Time's Up! Complete the Quiz</h2>
-          <p>Answer at least 3 out of 5 questions correctly to continue playing</p>
+          <p>Answer at least {quiz.passingScore || Math.ceil((quiz.totalQuestions || quiz.questions.length) * 0.6)} out of {quiz.totalQuestions || quiz.questions.length} questions correctly to continue playing</p>
         </div>
 
         <div className="quiz-progress">

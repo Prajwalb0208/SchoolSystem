@@ -158,9 +158,9 @@ const CarRacingGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLeve
       return;
     }
 
-    let lastObstacleTime = Date.now();
+    let lastObstacleTime = 0; // Start at 0 to generate obstacles immediately
     let lastDistanceUpdate = Date.now();
-    const obstacleInterval = Math.max(600, 2000 - (level * 100));
+    const obstacleInterval = Math.max(400, 1500 - (level * 80)); // More frequent obstacles
     const currentSpeed = baseSpeed;
 
     const gameLoop = () => {

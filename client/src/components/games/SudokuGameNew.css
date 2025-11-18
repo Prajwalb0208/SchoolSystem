@@ -1,0 +1,57 @@
+.sudoku-game-new {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background: #f0f0f0;
+  overflow: auto;
+  padding: 20px;
+}
+
+.sudoku-container {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.sudoku-wrapper {
+  width: 100%;
+  max-width: 600px;
+  height: auto;
+  min-height: 100%;
+}
+
+/* Ensure Sudoku game fits properly */
+.sudoku-wrapper .main {
+  width: 100%;
+  height: auto;
+}
+
+.sudoku-wrapper .screen {
+  width: 100%;
+  height: auto;
+}
+
+.sudoku-wrapper .main-game {
+  width: 100%;
+  height: auto;
+}
+
+.sudoku-wrapper .main-sudoku-grid {
+  width: 100%;
+  max-width: 100%;
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 2px;
+  padding: 10px;
+}
+
+.sudoku-wrapper .main-grid-cell {
+  aspect-ratio: 1;
+  min-width: 0;
+  font-size: clamp(14px, 2vw, 20px);
+}

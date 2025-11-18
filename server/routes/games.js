@@ -87,13 +87,14 @@ router.get('/quiz/:gameType', optionalAuthQuiz, async (req, res) => {
       ? availableQuestions 
       : allQuestions;
 
-    // Shuffle and take 5
+    // Shuffle and take up to 5 (or as many as available)
     const shuffled = questionsToUse.sort(() => Math.random() - 0.5);
-    const selectedQuestions = shuffled.slice(0, 5);
+    const selectedQuestions = shuffled.slice(0, Math.min(5, questionsToUse.length));
 
-    if (selectedQuestions.length < 5) {
+    // If we have at least 3 questions, proceed (lowered requirement)
+    if (selectedQuestions.length < 3) {
       return res.status(404).json({ 
-        message: `Not enough questions available. Found ${selectedQuestions.length} questions.`,
+        message: `Not enough questions available. Found ${selectedQuestions.length} questions. Need at least 3.`,
         found: selectedQuestions.length
       });
     }
@@ -112,8 +113,8 @@ router.get('/quiz/:gameType', optionalAuthQuiz, async (req, res) => {
     res.json({
       questions: quizData,
       gameType,
-      totalQuestions: 5,
-      passingScore: 3
+      totalQuestions: quizData.length,
+      passingScore: Math.ceil(quizData.length * 0.6) // 60% passing rate, minimum 2 for 3 questions
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

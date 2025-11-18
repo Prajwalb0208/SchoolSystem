@@ -7,22 +7,7 @@ const GameSelection = () => {
   const navigate = useNavigate();
 
   const games = [
-    {
-      id: 'blockrush',
-      name: 'Block Rush',
-      icon: '🧱',
-      description: 'Classic Tetris-style game. Clear lines by arranging falling blocks.',
-      color: '#FF6B6B',
-      difficulty: 'Easy'
-    },
-    {
-      id: 'snake',
-      name: 'Snake Game',
-      icon: '🐍',
-      description: 'Control a snake, eat food, and grow longer. Avoid hitting walls or yourself!',
-      color: '#4ECDC4',
-      difficulty: 'Easy'
-    },
+    // Original games
     {
       id: 'memory',
       name: 'Memory Match',
@@ -57,19 +42,19 @@ const GameSelection = () => {
     },
     {
       id: 'carracing',
-      name: 'Car Racing',
+      name: 'Infinite Cars',
       icon: '🏎️',
       description: 'Race through traffic! Avoid obstacles and reach the finish line.',
       color: '#FF4444',
       difficulty: 'Medium'
     },
     {
-      id: 'stumbleguys',
-      name: 'Stumble Guys',
-      icon: '🏃',
-      description: 'Navigate through obstacle courses! Jump, dodge, and reach the finish.',
-      color: '#FF6B9D',
-      difficulty: 'Hard'
+      id: 'sonic',
+      name: 'Sonic Runner',
+      icon: '💨',
+      description: 'Run as Sonic! Jump over enemies and collect rings in this endless runner.',
+      color: '#00FFFF',
+      difficulty: 'Medium'
     },
     {
       id: 'monopoly',
@@ -129,7 +114,7 @@ const GameSelection = () => {
           <ul>
             <li>Play any game for 2 minutes</li>
             <li>A quiz with coding questions will appear automatically</li>
-            <li>Answer at least 3 out of 5 questions correctly to continue</li>
+            <li>Answer at least 60% of questions correctly to continue</li>
             <li>Your progress is tracked for each game</li>
           </ul>
         </div>

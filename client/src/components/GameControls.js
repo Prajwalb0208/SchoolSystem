@@ -5,7 +5,7 @@ const GameControls = ({ isPaused, onPause, onResume, onRestart, onQuit }) => {
   return (
     <div className="game-controls-bar">
       <button 
-        className="control-btn pause-btn" 
+        className={`control-btn pause-btn ${isPaused ? 'resume-active' : ''}`}
         onClick={isPaused ? onResume : onPause}
         title={isPaused ? 'Resume' : 'Pause'}
       >
