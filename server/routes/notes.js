@@ -29,23 +29,48 @@ router.get('/:language', async (req, res) => {
     };
 
     const fileName = fileNameMap[language];
-    const filePath = path.join(__dirname, '../notes', fileName);
-
+    
+    // Use the same path as server.js static route
+    const notesDir = path.join(__dirname, '../notes');
+    const filePath = path.resolve(notesDir, fileName);
+    
+    console.log('Looking for file:', filePath);
+    console.log('File exists:', fs.existsSync(filePath));
+    console.log('Notes dir exists:', fs.existsSync(notesDir));
+    
     if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ message: 'Notes file not found' });
+      console.error('File not found at:', filePath);
+      // List files in notes directory for debugging
+      if (fs.existsSync(notesDir)) {
+        const files = fs.readdirSync(notesDir);
+        console.log('Files in notes directory:', files);
+      }
+      return res.status(404).json({ 
+        message: 'Notes file not found', 
+        fileName,
+        filePath,
+        notesDir 
+      });
     }
 
-    // Set proper headers for PDF viewing
+    // Set proper headers for PDF viewing/downloading
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
+    // Use attachment for download, inline for viewing
+    const disposition = req.query.download === 'true' ? 'attachment' : 'inline';
+    res.setHeader('Content-Disposition', `${disposition}; filename="${fileName}"`);
+    res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+    res.setHeader('Access-Control-Allow-Origin', '*'); // Allow CORS
     
-    // Send file for viewing/downloading
+    // Send file for viewing/downloading (use absolute path)
     res.sendFile(filePath, (err) => {
       if (err) {
         console.error('Error sending file:', err);
+        console.error('Error details:', err.message, err.code);
         if (!res.headersSent) {
-          res.status(500).json({ message: 'Error sending file' });
+          res.status(500).json({ message: 'Error sending file', error: err.message, code: err.code });
         }
+      } else {
+        console.log('File sent successfully:', fileName);
       }
     });
   } catch (error) {
@@ -64,26 +89,18 @@ router.get('/', async (req, res) => {
       { name: 'JavaScript', fileName: 'JavaScript.pdf' }
     ];
 
-    const notesDir = path.join(__dirname, '../notes');
-    
-    if (!fs.existsSync(notesDir)) {
-      fs.mkdirSync(notesDir, { recursive: true });
-    }
+    // Always return all languages since files exist
+    // The download route will handle file existence checking
+    const availableNotes = languages.map(lang => ({
+      language: lang.name,
+      fileName: lang.fileName,
+      downloadUrl: `/api/notes/${lang.name}`
+    }));
 
-    // Check which files actually exist
-    const availableNotes = languages
-      .filter(lang => {
-        const filePath = path.join(notesDir, lang.fileName);
-        return fs.existsSync(filePath);
-      })
-      .map(lang => ({
-        language: lang.name,
-        fileName: lang.fileName,
-        downloadUrl: `/api/notes/${lang.name}`
-      }));
-
+    console.log('Returning notes:', availableNotes.length);
     res.json(availableNotes);
   } catch (error) {
+    console.error('Error in notes list route:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
