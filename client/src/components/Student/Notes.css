@@ -135,6 +135,25 @@
   transform: translateX(5px);
 }
 
+.no-notes-message {
+  text-align: center;
+  padding: 60px 40px;
+  color: #6b7280;
+  font-size: 18px;
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  border-radius: 16px;
+  border: 2px dashed #e5e7eb;
+}
+
+.note-unavailable {
+  margin-top: 15px;
+  padding: 10px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 14px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .notes-container {

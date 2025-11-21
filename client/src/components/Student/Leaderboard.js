@@ -89,7 +89,14 @@ const Leaderboard = ({ difficulty, level }) => {
   }, [difficulty, level, user?.id]);
 
   if (!leaderboard) {
-    return <div className="leaderboard-container">Loading leaderboard...</div>;
+    return (
+      <div className="leaderboard-container">
+        <div className="loading-message">
+          <div className="spinner"></div>
+          <p>Loading leaderboard...</p>
+        </div>
+      </div>
+    );
   }
 
   const getRankIcon = (position) => {

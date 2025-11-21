@@ -141,35 +141,40 @@ const Game = () => {
     }
   };
 
-  const handleRetry = async () => {
+  const handleRetry = () => {
     setShowQuiz(false);
     setQuizData(null);
     setQuizPassed(false);
-    // Reset timer and allow quiz to be fetched again
+    // Reset timer and allow game to continue - quiz will appear again after 2 minutes
     setGameTime(gameTimeLimit);
     setProgress(0);
     setIsPaused(false);
     setGameRunning(true);
     startTimeRef.current = Date.now();
-    // Fetch quiz again
-    await handleTimeUp();
+    // Don't fetch quiz immediately - let timer count down naturally
   };
 
   const handlePause = () => {
-    setIsPaused(true);
-    soundEffects.playClick();
+    if (!showQuiz && !levelCompleted) {
+      setIsPaused(true);
+      setGameRunning(false);
+      soundEffects.playClick();
+    }
   };
 
   const handleResume = useCallback(() => {
-    setIsPaused(false);
-    soundEffects.playClick();
+    if (!showQuiz && !levelCompleted) {
+      setIsPaused(false);
+      setGameRunning(true);
+      soundEffects.playClick();
+    }
   }, []);
 
   // Handle spacebar for resume
   useEffect(() => {
     const handleKeyPress = (e) => {
-      // Only handle spacebar if game is paused and not in quiz
-      if (e.code === 'Space' && isPaused && !showQuiz) {
+      // Only handle spacebar if game is paused and not in quiz or level complete
+      if (e.code === 'Space' && isPaused && !showQuiz && !levelCompleted) {
         e.preventDefault();
         handleResume();
       }
@@ -179,7 +184,7 @@ const Game = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [isPaused, showQuiz, handleResume]);
+  }, [isPaused, showQuiz, levelCompleted, handleResume]);
 
   const handleRestart = () => {
     if (window.confirm('Are you sure you want to restart? All progress will be lost.')) {
@@ -193,6 +198,7 @@ const Game = () => {
       setProgress(0);
       setCurrentLevel(1);
       setLevelCompleted(false);
+      setLevelCompleteScore(0);
       startTimeRef.current = Date.now();
       soundEffects.playClick();
     }
@@ -310,7 +316,7 @@ const Game = () => {
         {/* Center - Game Content */}
         <div className="game-content-wrapper">
           <div className="game-content">
-            {gameRunning && !showQuiz && !isPaused ? (
+            {gameRunning && !showQuiz && !isPaused && !levelCompleted ? (
               renderGame()
             ) : null}
           </div>
@@ -326,15 +332,17 @@ const Game = () => {
       </div>
 
       {/* Controls */}
-      <GameControls
-        isPaused={isPaused}
-        onPause={handlePause}
-        onResume={handleResume}
-        onRestart={handleRestart}
-        onQuit={handleQuit}
-      />
+      {!showQuiz && !levelCompleted && (
+        <GameControls
+          isPaused={isPaused}
+          onPause={handlePause}
+          onResume={handleResume}
+          onRestart={handleRestart}
+          onQuit={handleQuit}
+        />
+      )}
 
-      {isPaused && !showQuiz && (
+      {isPaused && !showQuiz && !levelCompleted && (
         <div className="pause-overlay">
           <h2>⏸️ Game Paused</h2>
           <p>{quizPassed ? 'Quiz completed! Press SPACEBAR or click Resume to continue playing at the same level.' : 'Press SPACEBAR or click Resume to continue playing'}</p>

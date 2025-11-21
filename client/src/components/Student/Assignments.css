@@ -41,6 +41,42 @@
   border: 2px dashed #e5e7eb;
 }
 
+.no-assignments p {
+  margin: 10px 0;
+}
+
+.no-assignments-subtitle {
+  font-size: 16px;
+  color: #9ca3af;
+  margin-top: 10px;
+}
+
+.loading-message {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6b7280;
+}
+
+.loading-message .spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-message p {
+  font-size: 16px;
+  font-weight: 500;
+}
+
 .assignments-list {
   display: flex;
   flex-direction: column;

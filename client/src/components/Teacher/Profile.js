@@ -85,43 +85,61 @@ const Profile = () => {
 
   if (loading) return <div className="spinner"></div>;
 
+  if (!profile) {
+    return (
+      <div className="profile-container">
+        <div className="profile-card">
+          <h2>My Profile</h2>
+          <div className="error-message">
+            <p>Unable to load profile. Please try again later.</p>
+            <button onClick={fetchProfile} className="btn btn-primary">Retry</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="profile-container">
       <div className="profile-card">
         <h2>My Profile</h2>
         
-        {profile && (
-          <>
-            <div className="profile-header">
-              <div className="profile-picture">
-                {profile.profilePicture ? (
-                  <img src={`${process.env.REACT_APP_BASE_URL || 'https://schoolsystem-lyl7.onrender.com'}${profile.profilePicture}`} alt="Profile" />
-                ) : (
-                  <div className="avatar-placeholder">{profile.username?.[0]?.toUpperCase()}</div>
-                )}
-              </div>
-              <h3>{profile.username}</h3>
-            </div>
-
-            {!editing ? (
-              <div className="profile-info">
-                <div className="info-item">
-                  <label>Username:</label>
-                  <span>{profile.username}</span>
-                </div>
-                <div className="info-item">
-                  <label>Email:</label>
-                  <span>{profile.email}</span>
-                </div>
-                <div className="info-item">
-                  <label>Phone:</label>
-                  <span>{profile.phone}</span>
-                </div>
-                <button onClick={() => setEditing(true)} className="btn btn-primary">
-                  Edit Profile
-                </button>
-              </div>
+        <div className="profile-header">
+          <div className="profile-picture">
+            {profile.profilePicture ? (
+              <img src={`${process.env.REACT_APP_BASE_URL || 'https://schoolsystem-lyl7.onrender.com'}${profile.profilePicture}`} alt="Profile" />
             ) : (
+              <div className="avatar-placeholder">{profile.username?.[0]?.toUpperCase() || 'T'}</div>
+            )}
+          </div>
+          <h3>{profile.username || 'Teacher'}</h3>
+        </div>
+
+        {!editing ? (
+          <div className="profile-info">
+            <div className="info-item">
+              <label>Username:</label>
+              <span>{profile.username || 'N/A'}</span>
+            </div>
+            <div className="info-item">
+              <label>Email:</label>
+              <span>{profile.email || 'N/A'}</span>
+            </div>
+            <div className="info-item">
+              <label>Phone:</label>
+              <span>{profile.phone || 'N/A'}</span>
+            </div>
+            {profile.createdAt && (
+              <div className="info-item">
+                <label>Member Since:</label>
+                <span>{new Date(profile.createdAt).toLocaleDateString()}</span>
+              </div>
+            )}
+            <button onClick={() => setEditing(true)} className="btn btn-primary">
+              Edit Profile
+            </button>
+          </div>
+        ) : (
               <form onSubmit={handleSubmit} className="profile-edit-form">
                 <div className="form-group">
                   <label>Email</label>

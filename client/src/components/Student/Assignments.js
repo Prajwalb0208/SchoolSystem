@@ -104,13 +104,26 @@ const Assignments = () => {
     }
   };
 
-  if (loading) return <div className="spinner"></div>;
+  if (loading) {
+    return (
+      <div className="assignments-container">
+        <h1>Assignments</h1>
+        <div className="loading-message">
+          <div className="spinner"></div>
+          <p>Loading assignments...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="assignments-container">
       <h1>Assignments</h1>
       {assignments.length === 0 ? (
-        <div className="no-assignments">No assignments available yet.</div>
+        <div className="no-assignments">
+          <p>📝 No assignments available yet.</p>
+          <p className="no-assignments-subtitle">Check back later for new assignments from your teachers.</p>
+        </div>
       ) : (
         <div className="assignments-list">
           {assignments.map((assignment) => {

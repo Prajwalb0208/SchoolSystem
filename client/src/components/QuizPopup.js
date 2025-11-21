@@ -136,6 +136,7 @@ const QuizPopup = ({ quiz, onComplete, onRetry, passed }) => {
     if (result && result.passed) {
       onComplete(true, result.answers || []);
     } else {
+      // Quiz failed - retry will restart the game timer
       onRetry();
     }
   };

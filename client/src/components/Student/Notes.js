@@ -66,37 +66,51 @@ const Notes = () => {
         All notes are in PDF format and cover intermediate key concepts.
       </p>
       
-      <div className="notes-grid">
-        {languages.map((lang) => {
-          const note = notes.find(n => n.language === lang.name);
-          return (
-            <div key={lang.name} className="note-card" style={{ borderColor: lang.color }}>
-              <div className="note-icon" style={{ color: lang.color }}>
-                {lang.icon}
+      {notes.length === 0 ? (
+        <div className="no-notes-message">
+          <p>Notes are being loaded. Please wait...</p>
+        </div>
+      ) : (
+        <div className="notes-grid">
+          {languages.map((lang) => {
+            const note = notes.find(n => n.language === lang.name);
+            const noteExists = note !== undefined;
+            return (
+              <div key={lang.name} className="note-card" style={{ borderColor: lang.color }}>
+                <div className="note-icon" style={{ color: lang.color }}>
+                  {lang.icon}
+                </div>
+                <h3>{lang.name}</h3>
+                <p>One-page PDF covering intermediate key concepts</p>
+                {noteExists ? (
+                  <>
+                    <button
+                      onClick={() => handleDownload(lang.name)}
+                      className="btn btn-primary"
+                      style={{ background: lang.color }}
+                    >
+                      Download PDF
+                    </button>
+                    <a
+                      href={`${API_URL}${note.downloadUrl}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="view-link"
+                      style={{ color: lang.color }}
+                    >
+                      View Online →
+                    </a>
+                  </>
+                ) : (
+                  <div className="note-unavailable">
+                    <p>Note not available</p>
+                  </div>
+                )}
               </div>
-              <h3>{lang.name}</h3>
-              <p>One-page PDF covering intermediate key concepts</p>
-              <button
-                onClick={() => handleDownload(lang.name)}
-                className="btn btn-primary"
-                style={{ background: lang.color }}
-              >
-                Download PDF
-              </button>
-              {note && (
-                <a
-                  href={`${API_URL}${note.downloadUrl}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="view-link"
-                >
-                  View Online
-                </a>
-              )}
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

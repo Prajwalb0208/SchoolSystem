@@ -8,7 +8,16 @@ const SudokuGameNew = ({ gameRunning, onScoreChange, isPaused, level = 1, onLeve
   const [currentScore, setCurrentScore] = useState(0);
 
   useEffect(() => {
-    if (!gameRunning || isPaused || scriptsLoadedRef.current) return;
+    if (!gameRunning || isPaused || scriptsLoadedRef.current) {
+      // If paused, try to pause the game
+      if (isPaused && gameContainerRef.current) {
+        const pauseBtn = gameContainerRef.current.querySelector('#btn-pause');
+        if (pauseBtn && !pauseBtn.classList.contains('clicked')) {
+          pauseBtn.click();
+        }
+      }
+      return;
+    }
 
     const loadScript = (src) => {
       return new Promise((resolve, reject) => {
