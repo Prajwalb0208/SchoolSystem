@@ -17,19 +17,30 @@ const Profile = () => {
 
   const fetchProfile = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
       const response = await axios.get(`${API_URL}/teachers/profile`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      setProfile(response.data);
-      setFormData({
-        email: response.data.email,
-        phone: response.data.phone
-      });
+      
+      if (response.data) {
+        setProfile(response.data);
+        setFormData({
+          email: response.data.email || '',
+          phone: response.data.phone || ''
+        });
+      }
       setLoading(false);
     } catch (error) {
       console.error('Error fetching profile:', error);
       setLoading(false);
+      if (error.response?.status === 401) {
+        alert('Session expired. Please login again.');
+      }
     }
   };
 
@@ -43,14 +54,26 @@ const Profile = () => {
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const formData = new FormData();
-      formData.append('profilePicture', file);
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB');
+        return;
+      }
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+      
+      const uploadFormData = new FormData();
+      uploadFormData.append('profilePicture', file);
       
       try {
         const token = localStorage.getItem('token');
         const response = await axios.put(
           `${API_URL}/teachers/profile`,
-          formData,
+          uploadFormData,
           {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -59,8 +82,10 @@ const Profile = () => {
           }
         );
         setProfile(response.data.teacher);
+        alert('Profile picture updated successfully!');
       } catch (error) {
         console.error('Error uploading image:', error);
+        alert(error.response?.data?.message || 'Error uploading image. Please try again.');
       }
     }
   };
@@ -77,9 +102,15 @@ const Profile = () => {
         }
       );
       setProfile(response.data.teacher);
+      setFormData({
+        email: response.data.teacher.email,
+        phone: response.data.teacher.phone
+      });
       setEditing(false);
+      alert('Profile updated successfully!');
     } catch (error) {
       console.error('Error updating profile:', error);
+      alert(error.response?.data?.message || 'Error updating profile. Please try again.');
     }
   };
 
@@ -107,9 +138,19 @@ const Profile = () => {
         <div className="profile-header">
           <div className="profile-picture">
             {profile.profilePicture ? (
-              <img src={`${process.env.REACT_APP_BASE_URL || 'https://schoolsystem-lyl7.onrender.com'}${profile.profilePicture}`} alt="Profile" />
+              <img 
+                src={`${API_URL.replace('/api', '')}${profile.profilePicture}`} 
+                alt="Profile"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  const placeholder = e.target.parentElement.querySelector('.avatar-placeholder');
+                  if (placeholder) placeholder.style.display = 'flex';
+                }}
+              />
             ) : (
-              <div className="avatar-placeholder">{profile.username?.[0]?.toUpperCase() || 'T'}</div>
+              <div className="avatar-placeholder">
+                {profile.username?.[0]?.toUpperCase() || 'T'}
+              </div>
             )}
           </div>
           <h3>{profile.username || 'Teacher'}</h3>
@@ -140,44 +181,42 @@ const Profile = () => {
             </button>
           </div>
         ) : (
-              <form onSubmit={handleSubmit} className="profile-edit-form">
-                <div className="form-group">
-                  <label>Email</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Phone</label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Profile Picture (Upload from Gallery)</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                  />
-                </div>
-                <div className="form-actions">
-                  <button type="submit" className="btn btn-primary">Save</button>
-                  <button type="button" onClick={() => setEditing(false)} className="btn btn-secondary">
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            )}
-          </>
+          <form onSubmit={handleSubmit} className="profile-edit-form">
+            <div className="form-group">
+              <label>Email</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email || ''}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Phone</label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone || ''}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Profile Picture (Upload from Gallery)</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+              />
+            </div>
+            <div className="form-actions">
+              <button type="submit" className="btn btn-primary">Save</button>
+              <button type="button" onClick={() => setEditing(false)} className="btn btn-secondary">
+                Cancel
+              </button>
+            </div>
+          </form>
         )}
       </div>
     </div>
