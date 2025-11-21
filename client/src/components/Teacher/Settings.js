@@ -2,12 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import './Settings.css';
-
-const API_URL = process.env.REACT_APP_API_URL || 'https://schoolsystem-lyl7.onrender.com/api';
+import API_BASE_URL from '../../config';
 
 const Settings = () => {
   const { API_URL: contextAPI_URL } = useAuth();
-  const apiUrl = contextAPI_URL || API_URL;
+  const apiUrl = contextAPI_URL || API_BASE_URL;
   const [settings, setSettings] = useState({
     gameTimeLimit: 120, // 2 minutes default
     quizQuestionCount: 5,

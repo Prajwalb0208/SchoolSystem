@@ -7,6 +7,7 @@ import Assignments from './Assignments';
 import Notes from './Notes';
 import Settings from './Settings';
 import './StudentDashboard.css';
+import API_BASE_URL from '../../config';
 
 const StudentDashboard = () => {
   const { logout, API_URL } = useAuth();
@@ -89,7 +90,7 @@ const StudentDashboard = () => {
 };
 
 const FooterNotes = ({ API_URL }) => {
-  const baseUrl = API_URL ? API_URL.replace('/api', '') : (process.env.REACT_APP_API_URL || 'https://schoolsystem-lyl7.onrender.com/api').replace('/api', '');
+  const baseUrl = (API_URL || API_BASE_URL).replace('/api', '');
   
   return (
     <footer className="student-footer">

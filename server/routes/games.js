@@ -1,6 +1,6 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import Question from '../models/Question.js';
+import { randomUUID } from 'crypto';
 import GameSession from '../models/GameSession.js';
 import QuizSession from '../models/QuizSession.js';
 import Leaderboard from '../models/Leaderboard.js';
@@ -8,8 +8,49 @@ import Student from '../models/Student.js';
 import Teacher from '../models/Teacher.js';
 import Checkpoint from '../models/Checkpoint.js';
 import { auth, studentAuth } from '../middleware/auth.js';
+import { QUIZ_BANK } from '../data/staticQuizQuestions.js';
 
 const router = express.Router();
+
+const QUIZ_SETTINGS = {
+  minQuestions: 3,
+  defaultCount: 5,
+  sessionTtlMs: 10 * 60 * 1000 // 10 minutes
+};
+
+const activeQuizSessions = new Map();
+
+const cleanupExpiredSessions = () => {
+  const now = Date.now();
+  for (const [quizId, session] of activeQuizSessions.entries()) {
+    if (session.expiresAt <= now) {
+      activeQuizSessions.delete(quizId);
+    }
+  }
+};
+
+const getQuestionPoolForGame = (gameType = 'default') => {
+  const normalized = (gameType || 'default').toLowerCase();
+  return QUIZ_BANK[normalized] || QUIZ_BANK.default || [];
+};
+
+const pickQuestions = (pool, count) => {
+  const copy = [...pool];
+  copy.sort(() => Math.random() - 0.5);
+  const targetCount = Math.max(QUIZ_SETTINGS.minQuestions, Math.min(count, copy.length));
+  return copy.slice(0, targetCount);
+};
+
+const sanitizeQuestion = (question) => ({
+  _id: question._id?.toString() || question._id,
+  difficulty: question.difficulty || 'easy',
+  questionType: question.questionType || 'mcq',
+  question: question.question,
+  options: question.options || [],
+  explanation: question.explanation || '',
+  correctAnswer: question.correctAnswer,
+  timeLimit: question.timeLimit || 300
+});
 
 // Optional auth middleware for quiz
 const optionalAuthQuiz = async (req, res, next) => {
@@ -35,28 +76,78 @@ const optionalAuthQuiz = async (req, res, next) => {
   }
 };
 
-// Get quiz (5 questions) - coding questions only, no repeats, random order
+// Get quiz (local bank, random order)
 router.get('/quiz/:gameType', optionalAuthQuiz, async (req, res) => {
   try {
     const { gameType } = req.params;
-    const { usn } = req.query;
-    const studentId = req.userId;
+    const pool = getQuestionPoolForGame(gameType);
 
-    // Get student to check answered questions
-    let student = await Student.findById(studentId);
+    if (!pool.length) {
+      return res.status(500).json({ message: 'Quiz bank is empty. Please add questions.' });
+    }
+
+    cleanupExpiredSessions();
+
+    const selectedQuestions = pickQuestions(pool, QUIZ_SETTINGS.defaultCount);
+    if (selectedQuestions.length < QUIZ_SETTINGS.minQuestions) {
+      return res.status(500).json({ message: 'Quiz bank does not have enough unique questions.' });
+    }
+
+    const quizId = randomUUID();
+    activeQuizSessions.set(quizId, {
+      questions: selectedQuestions,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + QUIZ_SETTINGS.sessionTtlMs,
+      gameType
+    });
+
+    const sanitizedQuestions = selectedQuestions.map(sanitizeQuestion);
+    const totalQuestions = sanitizedQuestions.length;
+    const passingScore = Math.max(2, Math.ceil(totalQuestions * 0.6));
+
+    res.json({
+      quizId,
+      questions: sanitizedQuestions,
+      gameType,
+      totalQuestions,
+      passingScore,
+      source: 'local'
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Submit quiz (all 5 answers at once) - track game progress
+router.post('/submit-quiz', optionalAuthQuiz, async (req, res) => {
+  try {
+    const { gameType, answers, totalTimeTaken, gameScore, level, usn, quizId } = req.body;
     
-    // If no student found but USN provided, try to find by USN
+    if (!quizId) {
+      return res.status(400).json({ message: 'quizId is required' });
+    }
+
+    if (!answers || !Array.isArray(answers) || answers.length < QUIZ_SETTINGS.minQuestions) {
+      return res.status(400).json({ message: `Please provide at least ${QUIZ_SETTINGS.minQuestions} answers` });
+    }
+
+    const session = activeQuizSessions.get(quizId);
+    if (!session) {
+      return res.status(410).json({ message: 'Quiz expired or not found. Please start a new quiz.' });
+    }
+
+    let student = await Student.findById(req.userId);
+    
     if (!student && usn) {
       student = await Student.findOne({ usn: usn.toUpperCase() });
       if (!student) {
-        // Create or update student record with USN
         student = await Student.findOneAndUpdate(
           { usn: usn.toUpperCase() },
           { 
             usn: usn.toUpperCase(),
             username: usn.toUpperCase(),
             email: `${usn.toLowerCase()}@student.com`,
-            password: 'temp123456', // Temporary password
+            password: 'temp123456',
             name: usn.toUpperCase(),
             phone: '0000000000',
             dob: new Date('2000-01-01')
@@ -70,114 +161,22 @@ router.get('/quiz/:gameType', optionalAuthQuiz, async (req, res) => {
       return res.status(404).json({ message: 'Student not found. Please provide USN.' });
     }
 
-    // Fetch easy coding questions (MCQ type)
-    let allQuestions = await Question.find({ 
-      difficulty: 'easy',
-      questionType: 'mcq'
-    });
+    const questions = session.questions;
+    const questionMap = new Map(questions.map(q => [q._id?.toString() || q._id, q]));
+    const questionIds = questions.map(q => q._id?.toString() || q._id);
 
-    // Filter out already answered questions
-    const answeredQuestionIds = student.answeredQuestions || [];
-    const availableQuestions = allQuestions.filter(
-      q => !answeredQuestionIds.some(id => id.toString() === q._id.toString())
-    );
-
-    // If not enough new questions, use all questions but shuffle
-    const questionsToUse = availableQuestions.length >= 5 
-      ? availableQuestions 
-      : allQuestions;
-
-    // Shuffle and take up to 5 (or as many as available)
-    const shuffled = questionsToUse.sort(() => Math.random() - 0.5);
-    const selectedQuestions = shuffled.slice(0, Math.min(5, questionsToUse.length));
-
-    // If we have at least 3 questions, proceed (lowered requirement)
-    if (selectedQuestions.length < 3) {
-      return res.status(404).json({ 
-        message: `Not enough questions available. Found ${selectedQuestions.length} questions. Need at least 3.`,
-        found: selectedQuestions.length
-      });
-    }
-
-    // Format questions
-    const quizData = selectedQuestions.map(question => ({
-      _id: question._id,
-      difficulty: question.difficulty,
-      questionType: question.questionType,
-      question: question.question,
-      options: question.options,
-      explanation: question.explanation,
-      timeLimit: question.timeLimit || 300
-    }));
-
-    res.json({
-      questions: quizData,
-      gameType,
-      totalQuestions: quizData.length,
-      passingScore: Math.ceil(quizData.length * 0.6) // 60% passing rate, minimum 2 for 3 questions
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// Submit quiz (all 5 answers at once) - track game progress
-router.post('/submit-quiz', optionalAuthQuiz, async (req, res) => {
-  try {
-    const { gameType, answers, totalTimeTaken, gameScore, level, usn } = req.body;
-    
-    if (!answers || !Array.isArray(answers) || answers.length !== 5) {
-      return res.status(400).json({ message: 'Please provide answers for all 5 questions' });
-    }
-
-    let student = await Student.findById(req.userId);
-    
-    // If no student found but USN provided, find or create by USN
-    if (!student && usn) {
-      student = await Student.findOne({ usn: usn.toUpperCase() });
-      if (!student) {
-        student = await Student.findOneAndUpdate(
-          { usn: usn.toUpperCase() },
-          { 
-            usn: usn.toUpperCase(),
-            username: usn.toUpperCase(),
-            email: `${usn.toLowerCase()}@student.com`,
-            password: 'temp123456', // Temporary password
-            name: usn.toUpperCase(),
-            phone: '0000000000',
-            dob: new Date('2000-01-01')
-          },
-          { upsert: true, new: true }
-        );
-      }
-    }
-
-    if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
-    }
-
-    const questionIds = answers.map(a => a.questionId);
-    const questions = await Question.find({ _id: { $in: questionIds } });
-
-    if (questions.length !== 5) {
-      return res.status(404).json({ message: 'Some questions not found' });
-    }
-
-    // Check each answer
     const quizAnswers = [];
     let correctCount = 0;
     let totalScore = 0;
 
     for (let i = 0; i < answers.length; i++) {
       const answerData = answers[i];
-      const question = questions.find(q => q._id.toString() === answerData.questionId);
-      
+      const question = questionMap.get(answerData.questionId?.toString());
       if (!question) continue;
 
       let isCorrect = false;
       let score = 0;
 
-      // Check answer based on question type
       if (question.questionType === 'mcq') {
         isCorrect = answerData.answer === question.correctAnswer;
       } else if (question.questionType === 'codeBlocks') {
@@ -194,28 +193,31 @@ router.post('/submit-quiz', optionalAuthQuiz, async (req, res) => {
       if (isCorrect) {
         correctCount++;
         const maxTime = question.timeLimit || 300;
-        const timeBonus = Math.max(0, (maxTime - answerData.timeTaken) / maxTime * 100);
+        const timeBonus = Math.max(0, (maxTime - (answerData.timeTaken || 0)) / maxTime * 100);
         score = 100 + timeBonus;
         totalScore += score;
       }
 
       quizAnswers.push({
-        questionId: question._id,
+        questionId: question._id?.toString() || question._id,
+        question: question.question,
+        options: question.options,
         answer: answerData.answer,
         isCorrect,
-        timeTaken: answerData.timeTaken
+        correctAnswer: question.correctAnswer,
+        timeTaken: answerData.timeTaken || 0,
+        explanation: question.explanation || ''
       });
 
-      // Save individual game session for tracking
       if (student._id) {
         const gameSession = new GameSession({
           studentId: student._id,
           difficulty: question.difficulty || 'easy',
-          level: level || question.level || 1,
+          level: level || 1,
           questionId: question._id,
           answer: answerData.answer,
           isCorrect,
-          timeTaken: answerData.timeTaken,
+          timeTaken: answerData.timeTaken || 0,
           score,
           endTime: new Date()
         });
@@ -223,10 +225,10 @@ router.post('/submit-quiz', optionalAuthQuiz, async (req, res) => {
       }
     }
 
-    // Check if passed (at least 3 correct out of 5)
-    const passed = correctCount >= 3;
+    const totalQuestions = questions.length;
+    const passingScore = Math.max(2, Math.ceil(totalQuestions * 0.6));
+    const passed = correctCount >= passingScore;
 
-    // Save quiz session
     if (student._id) {
       const quizSession = new QuizSession({
         studentId: student._id,
@@ -237,21 +239,13 @@ router.post('/submit-quiz', optionalAuthQuiz, async (req, res) => {
         endTime: new Date(),
         totalTimeTaken,
         correctAnswers: correctCount,
-        totalQuestions: 5,
+        totalQuestions,
         passed,
         score: totalScore
       });
       await quizSession.save();
     }
 
-    // Track answered questions (prevent repeats)
-    const newAnsweredQuestions = [...new Set([
-      ...(student.answeredQuestions || []).map(id => id.toString()),
-      ...questionIds.map(id => id.toString())
-    ])];
-    student.answeredQuestions = newAnsweredQuestions;
-
-    // Update game-specific progress
     if (gameType) {
       let gameProgress = student.gameProgress || [];
       let gameIndex = gameProgress.findIndex(g => g.gameType === gameType);
@@ -275,7 +269,6 @@ router.post('/submit-quiz', optionalAuthQuiz, async (req, res) => {
         gameProgress[gameIndex].lastPlayed = new Date();
       }
       
-      // Update level-specific progress
       const currentLevel = level || 1;
       if (!gameProgress[gameIndex].levelProgress) {
         gameProgress[gameIndex].levelProgress = {};
@@ -293,9 +286,7 @@ router.post('/submit-quiz', optionalAuthQuiz, async (req, res) => {
       student.gameProgress = gameProgress;
     }
 
-    // Update student progress if passed
     if (passed) {
-      // Update streak
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const lastPlayed = student.lastPlayedDate ? new Date(student.lastPlayedDate) : null;
@@ -313,24 +304,22 @@ router.post('/submit-quiz', optionalAuthQuiz, async (req, res) => {
     }
     
     await student.save();
+    activeQuizSessions.delete(quizId);
 
     res.json({
       passed,
       correctAnswers: correctCount,
-      totalQuestions: 5,
+      totalQuestions,
       score: totalScore,
-      answers: quizAnswers.map((a, idx) => {
-        const question = questions.find(q => q._id.toString() === a.questionId);
-        return {
-          questionId: a.questionId,
-          question: question?.question || '',
-          options: question?.options || [],
-          userAnswer: a.answer,
-          isCorrect: a.isCorrect,
-          correctAnswer: question?.questionType === 'mcq' ? question?.correctAnswer : null,
-          explanation: question?.explanation || null
-        };
-      })
+      answers: quizAnswers.map(a => ({
+        questionId: a.questionId,
+        question: a.question,
+        options: a.options,
+        userAnswer: a.answer,
+        isCorrect: a.isCorrect,
+        correctAnswer: a.correctAnswer,
+        explanation: a.explanation
+      }))
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

@@ -14,8 +14,8 @@ import InfiniteCarsGame from './games/InfiniteCarsGame';
 import SonicGame from './games/SonicGame';
 import MonopolyGame from './games/MonopolyGame';
 import './Game.css';
-
-const API_URL = process.env.REACT_APP_API_URL || 'https://schoolsystem-lyl7.onrender.com/api';
+import API_URL from '../config';
+import QUIZ_BANK from '../data/quizBank';
 
 const Game = () => {
   const { gameType } = useParams();
@@ -52,45 +52,47 @@ const Game = () => {
     fetchSettings();
   }, []);
 
-  const handleTimeUp = useCallback(async () => {
-    if (showQuiz) return; // Prevent multiple triggers
-    
+  const buildLocalQuiz = useCallback(() => {
+    const pool = [...QUIZ_BANK];
+    pool.sort(() => Math.random() - 0.5);
+    const selected = pool.slice(0, Math.min(5, pool.length));
+    const totalQuestions = selected.length;
+    const passingScore = Math.max(2, Math.ceil(totalQuestions * 0.6));
+
+    return {
+      quizId: `local-${Date.now()}`,
+      gameType,
+      questions: selected.map((question) => ({
+        _id: question.id,
+        question: question.question,
+        options: question.options,
+        correctAnswer: question.correctAnswer,
+        explanation: question.explanation || '',
+      })),
+      totalQuestions,
+      passingScore,
+      source: 'local',
+    };
+  }, [gameType]);
+
+  const handleTimeUp = useCallback(() => {
+    if (showQuiz) return;
+
     setGameRunning(false);
     setIsPaused(true);
     soundEffects.playTimeWarning();
-    
-    try {
-      const token = localStorage.getItem('token');
-      const usn = localStorage.getItem('studentUSN');
-      
-      if (!usn) {
-        alert('Please enter your USN first. Redirecting to home...');
-        navigate('/');
-        return;
-      }
-      
-      const response = await axios.get(`${API_URL}/games/quiz/${gameType}`, {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-        params: { usn }
-      });
-      
-      if (response.data && response.data.questions && response.data.questions.length > 0) {
-        setQuizData({ ...response.data, gameScore, level: currentLevel });
-        setShowQuiz(true);
-      } else {
-        alert('No quiz questions available. Please try again later.');
-        setGameRunning(true);
-        setIsPaused(false);
-      }
-    } catch (error) {
-      console.error('Error fetching quiz:', error);
-      const errorMsg = error.response?.data?.message || error.message || 'Failed to load quiz';
-      alert(`Error loading quiz: ${errorMsg}. Please try again.`);
-      // Reset game state on error
+
+    const quiz = buildLocalQuiz();
+    if (!quiz || !quiz.questions?.length) {
+      alert('No quiz questions available. Please try again later.');
       setGameRunning(true);
       setIsPaused(false);
+      return;
     }
-  }, [gameType, gameScore, currentLevel, showQuiz, navigate]);
+
+    setQuizData({ ...quiz, gameScore, level: currentLevel });
+    setShowQuiz(true);
+  }, [buildLocalQuiz, currentLevel, gameScore, showQuiz]);
 
   useEffect(() => {
     soundEffects.updateSettings();

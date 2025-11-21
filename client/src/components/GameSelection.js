@@ -4,6 +4,7 @@ import axios from 'axios';
 import soundEffects from '../utils/soundEffects';
 import { useAuth } from '../context/AuthContext';
 import './GameSelection.css';
+import API_BASE_URL from '../config';
 
 const GameSelection = () => {
   const navigate = useNavigate();
@@ -82,7 +83,7 @@ const GameSelection = () => {
     try {
       setNotesLoading(true);
       // Use localhost for local development
-      const apiUrl = API_URL || process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      const apiUrl = API_URL || API_BASE_URL;
       console.log('Fetching notes from:', `${apiUrl}/notes`);
       const response = await axios.get(`${apiUrl}/notes`);
       console.log('Notes response:', response.data);

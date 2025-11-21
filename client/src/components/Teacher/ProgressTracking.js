@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import './ProgressTracking.css';
+import API_BASE_URL from '../../config';
 
 const ProgressTracking = () => {
   const { API_URL } = useAuth();
@@ -25,7 +26,7 @@ const ProgressTracking = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = API_URL || process.env.REACT_APP_API_URL || 'https://schoolsystem-lyl7.onrender.com/api';
+      const apiUrl = API_URL || API_BASE_URL;
       const response = await axios.get(`${apiUrl}/progress/all`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
@@ -54,7 +55,7 @@ const ProgressTracking = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = API_URL || process.env.REACT_APP_API_URL || 'https://schoolsystem-lyl7.onrender.com/api';
+      const apiUrl = API_URL || API_BASE_URL;
       const response = await axios.get(`${apiUrl}/progress/student/${studentUsn}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });

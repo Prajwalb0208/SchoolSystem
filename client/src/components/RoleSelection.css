@@ -264,6 +264,95 @@
   letter-spacing: 0;
 }
 
+.teacher-login-container {
+  margin: 30px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.teacher-login-container label {
+  font-size: 1.1em;
+  font-weight: 700;
+  color: #333;
+}
+
+.teacher-login-container input {
+  padding: 14px 18px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 1em;
+  transition: all 0.3s ease;
+}
+
+.teacher-login-container input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+}
+
+.teacher-auth-container {
+  margin: 30px 0;
+  text-align: left;
+}
+
+.teacher-auth-toggle {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.teacher-auth-toggle button {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid #667eea;
+  border-radius: 10px;
+  background: white;
+  color: #667eea;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.teacher-auth-toggle button.active {
+  background: #667eea;
+  color: white;
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.teacher-register-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.teacher-register-container label {
+  font-size: 1.1em;
+  font-weight: 700;
+  color: #333;
+}
+
+.teacher-register-container input {
+  padding: 12px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 1em;
+  transition: all 0.3s ease;
+}
+
+.teacher-register-container input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+}
+
+.role-error {
+  color: #d9534f;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
 @media (max-width: 768px) {
   .role-cards {
     flex-direction: column;

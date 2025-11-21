@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import soundEffects from '../utils/soundEffects';
 import './QuizPopup.css';
-
-const API_URL = process.env.REACT_APP_API_URL || 'https://schoolsystem-lyl7.onrender.com/api';
 
 const QuizPopup = ({ quiz, onComplete, onRetry, passed }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -66,9 +63,9 @@ const QuizPopup = ({ quiz, onComplete, onRetry, passed }) => {
 
   const handleSubmitQuiz = async () => {
     const allAnswered = quiz.questions.every(q => answers[q._id] !== undefined && answers[q._id] !== null);
-    const totalQuestions = quiz.totalQuestions || quiz.questions.length;
+    const totalQuestionsCount = quiz.totalQuestions || quiz.questions.length;
     if (!allAnswered) {
-      alert(`Please answer all ${totalQuestions} questions before submitting.`);
+      alert(`Please answer all ${totalQuestionsCount} questions before submitting.`);
       soundEffects.playError();
       return;
     }
@@ -76,60 +73,30 @@ const QuizPopup = ({ quiz, onComplete, onRetry, passed }) => {
     soundEffects.playSubmit();
     setSubmitted(true);
 
-    try {
-      const token = localStorage.getItem('token');
-      const answerArray = quiz.questions.map(q => ({
+    const questionResults = quiz.questions.map(q => {
+      const isCorrect = answers[q._id] === q.correctAnswer;
+      return {
         questionId: q._id,
-        answer: answers[q._id],
-        timeTaken: 30 // Default time
-      }));
-
-      const response = await axios.post(
-        `${API_URL}/games/submit-quiz`,
-        {
-          gameType: quiz.gameType || 'typing',
-          answers: answerArray,
-          totalTimeTaken: 300,
-          gameScore: quiz.gameScore || 0,
-          level: quiz.level || 1,
-          usn: localStorage.getItem('studentUSN')
-        },
-        {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-        }
-      );
-
-      setResult(response.data);
-      setShowReview(true); // Show review screen with answers
-    } catch (error) {
-      console.error('Error submitting quiz:', error);
-      // Fallback: get correct answers from quiz questions
-      const questionResults = quiz.questions.map(q => {
-        const isCorrect = answers[q._id] === q.correctAnswer;
-        return {
-          questionId: q._id,
-          question: q.question,
-          options: q.options,
-          userAnswer: answers[q._id],
-          correctAnswer: q.correctAnswer,
-          isCorrect,
-          explanation: q.explanation
-        };
-      });
-      
-      const correctCount = questionResults.filter(r => r.isCorrect).length;
-      const totalQuestions = quiz.totalQuestions || quiz.questions.length;
-      const passingScore = quiz.passingScore || Math.ceil(totalQuestions * 0.6);
-      const passed = correctCount >= passingScore;
-      setResult({
-        passed,
-        correctAnswers: correctCount,
-        totalQuestions: totalQuestions,
-        score: Math.round((correctCount / totalQuestions) * 100),
-        answers: questionResults
-      });
-      setShowReview(true);
-    }
+        question: q.question,
+        options: q.options,
+        userAnswer: answers[q._id],
+        correctAnswer: q.correctAnswer,
+        isCorrect,
+        explanation: q.explanation
+      };
+    });
+    
+    const correctCount = questionResults.filter(r => r.isCorrect).length;
+    const passingScore = quiz.passingScore || Math.ceil(totalQuestionsCount * 0.6);
+    const passed = correctCount >= passingScore;
+    setResult({
+      passed,
+      correctAnswers: correctCount,
+      totalQuestions: totalQuestionsCount,
+      score: Math.round((correctCount / totalQuestionsCount) * 100),
+      answers: questionResults
+    });
+    setShowReview(true);
   };
 
   const handleContinueAfterReview = () => {

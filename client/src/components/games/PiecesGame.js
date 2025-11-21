@@ -2,8 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import './PiecesGame.css';
 import '../Game.css';
-
-const API_URL = process.env.REACT_APP_API_URL || 'https://schoolsystem-lyl7.onrender.com/api';
+import API_URL from '../../config';
 const GAME_TYPE = 'pieces';
 
 const PiecesGame = ({ gameRunning, onScoreChange, isPaused }) => {

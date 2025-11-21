@@ -2,8 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import './SudokuGame.css';
 import '../Game.css';
-
-const API_URL = process.env.REACT_APP_API_URL || 'https://schoolsystem-lyl7.onrender.com/api';
+import API_URL from '../../config';
 const GAME_TYPE = 'sudoku';
 
 const SudokuGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelComplete }) => {

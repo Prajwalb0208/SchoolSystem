@@ -8,6 +8,7 @@ const TeacherSignup = () => {
     username: '',
     email: '',
     password: '',
+    confirmPassword: '',
     phone: ''
   });
   const [error, setError] = useState('');
@@ -42,7 +43,14 @@ const TeacherSignup = () => {
     setError('');
     setLoading(true);
 
-    const result = await signup(formData, 'teacher');
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    const { confirmPassword, ...payload } = formData;
+    const result = await signup(payload, 'teacher');
 
     if (result.success) {
       navigate('/teacher/dashboard');
@@ -87,6 +95,18 @@ const TeacherSignup = () => {
               type="password"
               name="password"
               value={formData.password}
+              onChange={handleChange}
+              required
+              minLength="6"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Confirm Password *</label>
+            <input
+              type="password"
+              name="confirmPassword"
+              value={formData.confirmPassword}
               onChange={handleChange}
               required
               minLength="6"
