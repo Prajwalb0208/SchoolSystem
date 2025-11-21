@@ -17,13 +17,38 @@ const RoleSelection = () => {
     }
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (selectedRole === 'student') {
       if (!usn.trim()) {
         alert('Please enter your USN');
         return;
       }
-      localStorage.setItem('studentUSN', usn.toUpperCase());
+      
+      const usnUpper = usn.toUpperCase();
+      localStorage.setItem('studentUSN', usnUpper);
+      
+      // Store student in database if not exists
+      try {
+        const API_URL = process.env.REACT_APP_API_URL || 'https://schoolsystem-lyl7.onrender.com/api';
+        const response = await fetch(`${API_URL}/auth/student/usn-login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ usn: usnUpper })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.token) {
+            localStorage.setItem('token', data.token);
+          }
+        }
+      } catch (error) {
+        console.error('Error storing USN:', error);
+        // Continue anyway - USN is stored in localStorage
+      }
+      
       navigate('/games');
     } else if (selectedRole === 'teacher') {
       navigate('/teacher/dashboard');

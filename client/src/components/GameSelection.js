@@ -22,7 +22,7 @@ const GameSelection = () => {
       icon: '💣',
       description: 'Find all mines without detonating them! Use logic and strategy.',
       color: '#795548',
-      difficulty: 'Hard'
+      difficulty: 'Easy'
     },
     {
       id: '2048',
@@ -30,7 +30,7 @@ const GameSelection = () => {
       icon: '🔢',
       description: 'Slide tiles to combine numbers and reach 2048!',
       color: '#FFC107',
-      difficulty: 'Medium'
+      difficulty: 'Easy'
     },
     {
       id: 'sudoku',

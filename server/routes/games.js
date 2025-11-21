@@ -56,10 +56,10 @@ router.get('/quiz/:gameType', optionalAuthQuiz, async (req, res) => {
             usn: usn.toUpperCase(),
             username: usn.toUpperCase(),
             email: `${usn.toLowerCase()}@student.com`,
-            password: 'temp', // Will be updated later
+            password: 'temp123456', // Temporary password
             name: usn.toUpperCase(),
             phone: '0000000000',
-            dob: new Date()
+            dob: new Date('2000-01-01')
           },
           { upsert: true, new: true }
         );
@@ -142,10 +142,10 @@ router.post('/submit-quiz', optionalAuthQuiz, async (req, res) => {
             usn: usn.toUpperCase(),
             username: usn.toUpperCase(),
             email: `${usn.toLowerCase()}@student.com`,
-            password: 'temp',
+            password: 'temp123456', // Temporary password
             name: usn.toUpperCase(),
             phone: '0000000000',
-            dob: new Date()
+            dob: new Date('2000-01-01')
           },
           { upsert: true, new: true }
         );

@@ -64,19 +64,13 @@ export default class GameScene extends Phaser.Scene {
 	setControls() {
 		Methods.log("Setting up the controls...");
 		
-		this.character.setInteractive();
+		// Create cursor keys for arrow key controls
+		this.cursors = this.input.keyboard.createCursorKeys();
 		
-		this.input.setDraggable(this.character);
+		// Store movement speed
+		this.moveSpeed = Constants.CHARACTER_SPEED * 0.5;
 		
-		this.input.on("drag", (ptr, obj, x, y) => {
-			if (this.physics.world.isPaused === true) {
-				return;
-			}
-			
-			this.character.setX(x);
-		});
-		
-		Methods.log("Controls successfully added. Character is now draggable");
+		Methods.log("Controls successfully added. Use arrow keys to move");
 	}
 	
 	addObjects() {
@@ -233,7 +227,7 @@ export default class GameScene extends Phaser.Scene {
 			.setScrollFactor(0)
 			.setDepth(height);
 		
-		const instructions = "Drag the red car to move";
+		const instructions = "Use arrow keys to move";
 		
 		this.instructions =
 			Methods.addText(this, Constants.SCREEN_WIDTH / 2, 400, instructions, "16px")
@@ -512,11 +506,31 @@ export default class GameScene extends Phaser.Scene {
 		}
 	}
 	
+	handleMovement() {
+		if (this.physics.world.isPaused === true) {
+			return;
+		}
+		
+		// Handle arrow key movement
+		if (this.cursors.left.isDown) {
+			const newX = this.character.x - this.moveSpeed * (this.game.loop.delta / 1000);
+			const minX = Constants.ROAD_BOUNDARY[0] + (this.character.width / 2);
+			this.character.setX(Math.max(newX, minX));
+		}
+		
+		if (this.cursors.right.isDown) {
+			const newX = this.character.x + this.moveSpeed * (this.game.loop.delta / 1000);
+			const maxX = Constants.ROAD_BOUNDARY[1] - (this.character.width / 2);
+			this.character.setX(Math.min(newX, maxX));
+		}
+	}
+	
 	updateWorld() {
 		if (this.physics.world.isPaused === true) {
 			return;
 		}
 		
+		this.handleMovement();
 		this.repositionBoundary();
 		
 		const isAddRoad = this.addRoad();

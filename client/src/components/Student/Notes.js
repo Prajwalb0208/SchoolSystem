@@ -55,7 +55,8 @@ const Notes = () => {
     { name: 'C', icon: '📘', color: '#00599c' },
     { name: 'C++', icon: '📗', color: '#00599c' },
     { name: 'Java', icon: '☕', color: '#ed8b00' },
-    { name: 'Python', icon: '🐍', color: '#3776ab' }
+    { name: 'Python', icon: '🐍', color: '#3776ab' },
+    { name: 'JavaScript', icon: '📜', color: '#f7df1e' }
   ];
 
   return (
@@ -92,7 +93,7 @@ const Notes = () => {
                       Download PDF
                     </button>
                     <a
-                      href={`${API_URL}${note.downloadUrl}`}
+                      href={`${API_URL.replace('/api', '')}${note.downloadUrl}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="view-link"

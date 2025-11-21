@@ -9,7 +9,9 @@ const GAME_TYPE = 'memory';
 const SYMBOLS = ['💻', '🔧', '📝', '🎯', '⚡', '🚀', '⭐', '🎮', '🎨', '📱', '💡', '🔍', '🎪', '🎭', '🎬', '🎤', '🎧', '🎵', '🎸', '🎹'];
 
 const MemoryGame = ({ gameRunning, onScoreChange, isPaused, level = 1, onLevelComplete }) => {
-  const CARD_COUNT = 4 + (level * 2); // Level 1: 6 cards, Level 2: 8, Level 3: 10, Level 4: 12, Level 5: 14
+  // Made easier: Fewer cards at each level (must be even for pairs)
+  // Level 1: 4 cards (2 pairs), Level 2: 6 cards (3 pairs), Level 3: 8 cards (4 pairs), Level 4: 10 cards (5 pairs), Level 5: 12 cards (6 pairs)
+  const CARD_COUNT = 2 + (level * 2);
   const [cards, setCards] = useState([]);
   const [flipped, setFlipped] = useState([]);
   const [matched, setMatched] = useState([]);

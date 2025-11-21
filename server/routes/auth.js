@@ -174,6 +174,61 @@ router.post('/student/login', [
   }
 });
 
+// Student USN Login (for quick access without password)
+router.post('/student/usn-login', [
+  body('usn').trim().notEmpty().withMessage('USN is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { usn } = req.body;
+    const usnUpper = usn.toUpperCase();
+
+    // Find or create student by USN
+    let student = await Student.findOne({ usn: usnUpper });
+    
+    if (!student) {
+      // Create new student record with USN
+      student = new Student({
+        username: usnUpper,
+        email: `${usnUpper.toLowerCase()}@student.com`,
+        password: 'temp123456', // Temporary password
+        name: usnUpper,
+        phone: '0000000000',
+        usn: usnUpper,
+        dob: new Date('2000-01-01'),
+        batches: []
+      });
+      await student.save();
+    }
+
+    // Update last login time
+    student.lastPlayedDate = new Date();
+    await student.save();
+
+    const token = generateToken(student._id);
+
+    res.json({
+      message: 'USN login successful',
+      token,
+      user: {
+        id: student._id,
+        username: student.username,
+        email: student.email,
+        name: student.name,
+        usn: student.usn,
+        userType: 'student'
+      }
+    });
+  } catch (error) {
+    console.error('USN login error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Teacher Login
 router.post('/teacher/login', [
   body('username').trim().notEmpty().withMessage('Username is required'),

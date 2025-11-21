@@ -7,7 +7,7 @@
     <meta name="full-screen" content="yes" />
     <meta name="screen-orientation" content="portrait" />
     <title>Infinite Cars</title>
-    <link rel="stylesheet" href="./infinite-cars-styles.css" />
+    <link rel="stylesheet" href="./styles/infinite-cars.css" />
     <script>
       console.clear();
       // Patch asset paths
@@ -18,66 +18,75 @@
     <div id="infinite-cars"></div>
     <script src="./infinite-cars-scripts/libs/phaser.min.js"></script>
     <script>
-      // Patch the processed script to use correct asset paths
+      // Patch asset paths BEFORE Phaser loads
       const assetBasePath = './infinite-cars-assets/';
       
-      // Patch image loading
-      const originalImageLoad = Phaser.Loader.LoaderPlugin.prototype.image;
-      Phaser.Loader.LoaderPlugin.prototype.image = function(key, url) {
-        if (url && typeof url === 'string') {
-          if (url.startsWith('./assets/images/')) {
-            url = url.replace('./assets/images/', assetBasePath + 'images/');
-          } else if (url.startsWith('./assets/')) {
-            url = url.replace('./assets/', assetBasePath);
-          }
-        }
-        return originalImageLoad.call(this, key, url);
-      };
+      // Store original Phaser methods before they're used
+      let phaserLoaded = false;
       
-      // Patch audio loading - handle both string and array formats
-      const originalAudioLoad = Phaser.Loader.LoaderPlugin.prototype.audio;
-      Phaser.Loader.LoaderPlugin.prototype.audio = function(key, urls) {
-        if (Array.isArray(urls)) {
-          urls = urls.map(url => {
-            if (typeof url === 'string') {
-              if (url.startsWith('./assets/audios/')) {
-                return url.replace('./assets/audios/', assetBasePath + 'audios/');
-              } else if (url.startsWith('./assets/')) {
-                return url.replace('./assets/', assetBasePath);
+      // Patch image loading
+      const patchImageLoad = function() {
+        if (typeof Phaser !== 'undefined' && Phaser.Loader && Phaser.Loader.LoaderPlugin) {
+          const originalImageLoad = Phaser.Loader.LoaderPlugin.prototype.image;
+          Phaser.Loader.LoaderPlugin.prototype.image = function(key, url) {
+            if (url && typeof url === 'string') {
+              if (url.includes('./assets/images/')) {
+                url = url.replace('./assets/images/', assetBasePath + 'images/');
+              } else if (url.includes('./assets/') && !url.includes(assetBasePath)) {
+                url = url.replace('./assets/', assetBasePath);
               }
             }
-            return url;
-          });
-        } else if (urls && typeof urls === 'string') {
-          if (urls.startsWith('./assets/audios/')) {
-            urls = urls.replace('./assets/audios/', assetBasePath + 'audios/');
-          } else if (urls.startsWith('./assets/')) {
-            urls = urls.replace('./assets/', assetBasePath);
-          }
+            return originalImageLoad.call(this, key, url);
+          };
         }
-        return originalAudioLoad.call(this, key, urls);
       };
       
-      // Also patch the file loading to handle audio errors gracefully
-      const originalFileLoad = Phaser.Loader.FileTypesManager.prototype.audio;
-      if (originalFileLoad) {
-        Phaser.Loader.FileTypesManager.prototype.audio = function(key, urls, config) {
-          // Ensure audio paths are correct
-          if (Array.isArray(urls)) {
-            urls = urls.map(url => {
-              if (typeof url === 'string' && url.includes('./assets/audios/')) {
-                return url.replace('./assets/audios/', assetBasePath + 'audios/');
+      // Patch audio loading - more comprehensive
+      const patchAudioLoad = function() {
+        if (typeof Phaser !== 'undefined' && Phaser.Loader && Phaser.Loader.LoaderPlugin) {
+          const originalAudioLoad = Phaser.Loader.LoaderPlugin.prototype.audio;
+          Phaser.Loader.LoaderPlugin.prototype.audio = function(key, urls) {
+            const fixUrl = (url) => {
+              if (typeof url === 'string') {
+                if (url.includes('./assets/audios/')) {
+                  return url.replace('./assets/audios/', assetBasePath + 'audios/');
+                } else if (url.includes('./assets/') && !url.includes(assetBasePath)) {
+                  return url.replace('./assets/', assetBasePath);
+                }
               }
               return url;
-            });
-          } else if (typeof urls === 'string' && urls.includes('./assets/audios/')) {
-            urls = urls.replace('./assets/audios/', assetBasePath + 'audios/');
-          }
-          return originalFileLoad.call(this, key, urls, config);
-        };
-      }
+            };
+            
+            if (Array.isArray(urls)) {
+              urls = urls.map(fixUrl);
+            } else if (urls) {
+              urls = fixUrl(urls);
+            }
+            
+            return originalAudioLoad.call(this, key, urls);
+          };
+        }
+      };
+      
+      // Patch when Phaser is available
+      const checkAndPatch = setInterval(() => {
+        if (typeof Phaser !== 'undefined') {
+          patchImageLoad();
+          patchAudioLoad();
+          clearInterval(checkAndPatch);
+          phaserLoaded = true;
+        }
+      }, 10);
+      
+      // Also patch immediately after Phaser script loads
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          patchImageLoad();
+          patchAudioLoad();
+        }, 100);
+      });
     </script>
-    <script src="./infinite-cars-scripts/infinite-cars.processed.js"></script>
+    <script type="module" src="./infinite-cars-scripts/infinite-cars.processed.js"></script>
   </body>
 </html>
 

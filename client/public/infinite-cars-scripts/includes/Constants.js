@@ -11,8 +11,8 @@ export const MAX_SCREEN_HEIGHT =  SCREEN_HEIGHT * 4;
 
 export const CAMERA_FADE_TIME = 256;
 
-export const IMAGES_PATH = "./assets/images";
-export const AUDIOS_PATH = "./assets/audios";
+export const IMAGES_PATH = "./infinite-cars-assets/images";
+export const AUDIOS_PATH = "./infinite-cars-assets/audios";
 
 export const TILE_WIDTH = 32;
 export const TILE_HEIGHT = 32;

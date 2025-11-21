@@ -9,7 +9,7 @@ import Settings from './Settings';
 import './StudentDashboard.css';
 
 const StudentDashboard = () => {
-  const { logout } = useAuth();
+  const { logout, API_URL } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
 
@@ -81,7 +81,45 @@ const StudentDashboard = () => {
           <Route path="/settings" element={<Settings />} />
         </Routes>
       </div>
+      
+      {/* Footer with Notes Quick Access */}
+      <FooterNotes API_URL={API_URL} />
     </div>
+  );
+};
+
+const FooterNotes = ({ API_URL }) => {
+  const baseUrl = API_URL ? API_URL.replace('/api', '') : (process.env.REACT_APP_API_URL || 'https://schoolsystem-lyl7.onrender.com/api').replace('/api', '');
+  
+  return (
+    <footer className="student-footer">
+      <div className="footer-content">
+        <div className="footer-section">
+          <h3>Quick Links</h3>
+          <Link to="/student/notes">📚 Notes</Link>
+          <Link to="/student/games">🎮 Games</Link>
+          <Link to="/student/assignments">📝 Assignments</Link>
+        </div>
+        <div className="footer-section">
+          <h3>Programming Notes</h3>
+          <div className="notes-quick-links">
+            <a href={`${baseUrl}/api/notes/C`} target="_blank" rel="noopener noreferrer">C Language</a>
+            <a href={`${baseUrl}/api/notes/C++`} target="_blank" rel="noopener noreferrer">C++ Language</a>
+            <a href={`${baseUrl}/api/notes/Java`} target="_blank" rel="noopener noreferrer">Java Language</a>
+            <a href={`${baseUrl}/api/notes/Python`} target="_blank" rel="noopener noreferrer">Python Language</a>
+            <a href={`${baseUrl}/api/notes/JavaScript`} target="_blank" rel="noopener noreferrer">JavaScript Language</a>
+          </div>
+        </div>
+        <div className="footer-section">
+          <h3>About</h3>
+          <p>Coding Habit Builder</p>
+          <p>Learn coding through games</p>
+        </div>
+      </div>
+      <div className="footer-bottom">
+        <p>&copy; 2024 Coding Habit Builder. All rights reserved.</p>
+      </div>
+    </footer>
   );
 };
 
