@@ -20,7 +20,7 @@ const GameSelection = () => {
       icon: '🧠',
       description: 'Match pairs of cards. Test your memory and concentration skills.',
       color: '#45B7D1',
-      difficulty: 'Medium'
+      difficulty: 'Easy'
     },
     {
       id: 'minesweeper',
@@ -28,7 +28,7 @@ const GameSelection = () => {
       icon: '💣',
       description: 'Find all mines without detonating them! Use logic and strategy.',
       color: '#795548',
-      difficulty: 'Easy'
+      difficulty: 'Hard'
     },
     {
       id: '2048',
@@ -108,63 +108,14 @@ const GameSelection = () => {
     navigate(`/game/${gameId}`);
   };
 
-  const handleDownload = async (language) => {
-    try {
-      // Use localhost for local development
-      const apiUrl = API_URL || process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-      const token = localStorage.getItem('token');
-      
-      const fileNameMap = {
-        'C': 'C.pdf',
-        'C++': 'Cpp.pdf',
-        'Java': 'Java.pdf',
-        'Python': 'Python.pdf',
-        'JavaScript': 'JavaScript.pdf'
-      };
-      const fileName = fileNameMap[language];
-      
-      console.log('Downloading:', `${apiUrl}/notes/${language}`);
-      const response = await axios.get(`${apiUrl}/notes/${language}`, {
-        responseType: 'blob',
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-      });
-      
-      // Create blob and download
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', fileName);
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error downloading notes:', error);
-      console.error('Error response:', error.response);
-      
-      // Fallback: use direct static file link
-      const baseUrl = 'http://localhost:5000';
-      const fileNameMap = {
-        'C': 'C.pdf',
-        'C++': 'Cpp.pdf',
-        'Java': 'Java.pdf',
-        'Python': 'Python.pdf',
-        'JavaScript': 'JavaScript.pdf'
-      };
-      const fileName = fileNameMap[language];
-      const staticUrl = `${baseUrl}/notes/${fileName}`;
-      
-      // Create download link
-      const link = document.createElement('a');
-      link.href = staticUrl;
-      link.setAttribute('download', fileName);
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+
+  // Google Drive file IDs
+  const driveFileIds = {
+    'C': '1f201e2q-VRrb7L6FkmyYGBGR5kkf8K-p',
+    'C++': '1cC8mW3M9t2MQntln9kSk052mTlK9CDSy',
+    'Java': '1GI7RFqNhwDYhdjf3eXMkYRxVZiwXsmqn',
+    'Python': '1hWpY_BIZxuY3-QHcEDq08Sn2dewiL8_c',
+    'JavaScript': '1FOdEpflFVeKavJ5pxh72pcReu2jhtMr8'
   };
 
   const languages = [
@@ -248,24 +199,16 @@ const GameSelection = () => {
         {activeTab === 'notes' && (
           <>
             <h1>📚 Programming Notes</h1>
-            <p className="subtitle">Download or view PDF notes for programming languages</p>
+            <p className="subtitle">View PDF notes for programming languages</p>
             
             {notesLoading ? (
               <div className="loading-spinner">Loading notes...</div>
             ) : (
               <div className="notes-grid">
                 {languages.map((lang) => {
-                  // Use localhost for local development
-                  const baseUrl = 'http://localhost:5000';
-                  const fileNameMap = {
-                    'C': 'C.pdf',
-                    'C++': 'Cpp.pdf',
-                    'Java': 'Java.pdf',
-                    'Python': 'Python.pdf',
-                    'JavaScript': 'JavaScript.pdf'
-                  };
-                  const fileName = fileNameMap[lang.name];
-                  const staticUrl = `${baseUrl}/notes/${fileName}`;
+                  const fileId = driveFileIds[lang.name];
+                  // Google Drive view URL
+                  const viewUrl = `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
                   
                   return (
                     <div key={lang.name} className="note-card" style={{ borderColor: lang.color }}>
@@ -274,21 +217,32 @@ const GameSelection = () => {
                       </div>
                       <h3>{lang.name}</h3>
                       <p>One-page PDF covering intermediate key concepts</p>
-                      <button
-                        onClick={() => handleDownload(lang.name)}
-                        className="download-btn"
-                        style={{ background: lang.color }}
-                      >
-                        Download PDF
-                      </button>
                       <a
-                        href={staticUrl}
+                        href={viewUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="view-link"
-                        style={{ color: lang.color }}
+                        style={{ 
+                          color: 'white', 
+                          background: lang.color, 
+                          padding: '12px 24px', 
+                          borderRadius: '8px', 
+                          textDecoration: 'none', 
+                          display: 'inline-block', 
+                          marginTop: '15px', 
+                          fontWeight: '600',
+                          transition: 'all 0.3s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.transform = 'translateY(-2px)';
+                          e.target.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.transform = 'translateY(0)';
+                          e.target.style.boxShadow = 'none';
+                        }}
                       >
-                        View Online →
+                        View PDF →
                       </a>
                     </div>
                   );
