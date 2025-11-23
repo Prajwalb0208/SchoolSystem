@@ -97,7 +97,13 @@ const RoleSelection = () => {
           return;
         }
         const result = await signup(
-          { username: username.trim(), email: email.trim(), phone: phone.trim(), password },
+          {
+            username: username.trim(),
+            email: email.trim(),
+            phone: phone.trim(),
+            password,
+            confirmPassword
+          },
           'teacher'
         );
         setLoading(false);

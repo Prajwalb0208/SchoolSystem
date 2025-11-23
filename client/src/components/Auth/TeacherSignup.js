@@ -49,8 +49,7 @@ const TeacherSignup = () => {
       return;
     }
 
-    const { confirmPassword, ...payload } = formData;
-    const result = await signup(payload, 'teacher');
+    const result = await signup(formData, 'teacher');
 
     if (result.success) {
       navigate('/teacher/dashboard');
